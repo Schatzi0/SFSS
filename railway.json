@@ -1,12 +1,11 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "NIXPACKS",
+    "builder": "RAILPACK",
     "buildCommand": "mvn clean package -DskipTests"
   },
   "deploy": {
     "startCommand": "java -jar target/SFSS-1.0-SNAPSHOT.jar --server.port=$PORT",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 3
+    "restartPolicyType": "ON_FAILURE"
   }
 }
