@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["jdk21"]
+
+[phases.build]
+cmds = ["mvn clean package -DskipTests"]
+
+[start]
+cmd = "java -jar target/SFSS-1.0-SNAPSHOT.jar --server.port=$PORT"
