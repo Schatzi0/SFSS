@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | SFSS</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; display: flex;
+            justify-content: center; align-items: center; height: 100vh; }
+        .card { background: white; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 360px; }
+        h2 { text-align: center; color: #2d3748; margin-bottom: 1.5rem; }
+        input { width: 100%; padding: 0.75rem 1rem; margin-bottom: 1rem;
+            border: 1px solid #cbd5e0; border-radius: 8px; font-size: 0.95rem; }
+        button { width: 100%; padding: 0.75rem; background: #48bb78; color: white;
+            border: none; border-radius: 8px; font-size: 1rem; cursor: pointer; }
+        button:hover { background: #276749; }
+        #msg { text-align: center; margin-top: 1rem; font-size: 0.9rem; }
+        .link { text-align: center; margin-top: 1rem; font-size: 0.85rem; }
+        .link a { color: #48bb78; }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🔒 Secure Login</h2>
+    <input type="email" id="email" placeholder="Email Address" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <div id="msg"></div>
+    <div class="link"><a href="/register.html">Don't have an account? Register</a></div>
+</div>
+
+<script>
+    async function login() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const msg = document.getElementById('msg');
+
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        msg.style.color = res.ok ? 'green' : 'red';
+        msg.textContent = data.message;
+
+        if (res.ok) {
+            localStorage.setItem('userName', data.name);
+            setTimeout(() => window.location.href = '/dashboard.html', 800);
+        }
+    }
+</script>
+</body>
+</html>
