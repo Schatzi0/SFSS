@@ -191,7 +191,8 @@ private StorageService storageService;
         fe.setStoredName(storedName);
         fe.setFileType(file.getContentType());
         fe.setFileSize(file.getSize());
-        fe.setStoragePath(storedName); // sirf naam store karo, URL nahi
+//        fe.setStoragePath(storedName); // sirf naam store karo, URL nahi
+        fe.setStoragePath(publicPath); //
         fe.setUser(user);
 
         String autoFolder = getAutoFolderName(file.getContentType(), originalName);

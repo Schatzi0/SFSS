@@ -1,5 +1,7 @@
 package com.securefile.sfss.controller;
 
+
+
 import com.securefile.sfss.model.FileEntity;
 import com.securefile.sfss.model.User;
 import com.securefile.sfss.service.FileService;
@@ -20,9 +22,15 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
+
+
+    private static final Logger log = LoggerFactory.getLogger(FileController.class);
 
     @Autowired private FileService fileService;
     @Autowired private UserService userService;
@@ -37,14 +45,17 @@ public class FileController {
     @PostMapping("/upload")
     public ResponseEntity<?> upload(
             @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "folderId", required = false) Integer folderId,
+            @RequestParam(required = false) Integer folderId,
             HttpSession session) {
+
         User user = getUser(session);
-        if (user == null) return ResponseEntity.status(401).body(Map.of("message", "Login required"));
+        if (user == null) return ResponseEntity.status(401).build();
+
         try {
             return ResponseEntity.ok(fileService.uploadFile(file, folderId, user));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("message", "Upload failed: " + e.getMessage()));
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(e.getMessage());
         }
     }
 
@@ -199,6 +210,7 @@ public class FileController {
                             java.nio.charset.StandardCharsets.UTF_8))
                     .body(content);
         } catch (Exception e) {
+            log.error("Error while previewing fileId={}", fileId, e);
             return ResponseEntity.status(500).body("Preview unavailable");
         }
     }
@@ -219,6 +231,7 @@ public class FileController {
                             "attachment; filename=\"" + fe.getFileName() + "\"")
                     .body(new org.springframework.core.io.InputStreamResource(stream));
         } catch (Exception e) {
+            log.error("Error while downloading fileId={}", fileId, e);
             return ResponseEntity.status(500).build();
         }
     }

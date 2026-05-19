@@ -29,28 +29,58 @@ public class StorageService {
     @Value("${supabase.storage.region:ap-south-1}")
     private String region;
 
+//    private S3Client getClient() {
+//        // Supabase Storage is S3-compatible
+//        return S3Client.builder()
+//                .endpointOverride(URI.create(storageUrl))
+//                .credentialsProvider(StaticCredentialsProvider.create(
+//                        AwsBasicCredentials.create("anystring", storageKey)))
+//                .region(Region.of(region))
+//                .forcePathStyle(true)
+//                .build();
+//    }
+//
+//    // Upload file to Supabase Storage
+//    public String uploadFile(String storedName, MultipartFile file) throws IOException {
+//        S3Client s3 = getClient();
+//        s3.putObject(
+//                PutObjectRequest.builder()
+//                        .bucket(bucket)
+//                        .key(storedName)
+//                        .contentType(file.getContentType())
+//                        .build(),
+//                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+//        );
+//        return storageUrl + "/object/public/" + bucket + "/" + storedName;
+//    }
+
     private S3Client getClient() {
-        // Supabase Storage is S3-compatible
         return S3Client.builder()
-                .endpointOverride(URI.create(storageUrl))
+                .endpointOverride(URI.create(storageUrl + "/s3")) // ✅ FIXED
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create("anystring", storageKey)))
+                        AwsBasicCredentials.create("supabase", storageKey))) // ✅ FIXED
                 .region(Region.of(region))
                 .forcePathStyle(true)
                 .build();
     }
 
-    // Upload file to Supabase Storage
     public String uploadFile(String storedName, MultipartFile file) throws IOException {
         S3Client s3 = getClient();
-        s3.putObject(
-                PutObjectRequest.builder()
-                        .bucket(bucket)
-                        .key(storedName)
-                        .contentType(file.getContentType())
-                        .build(),
-                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-        );
+
+        try {
+            s3.putObject(
+                    PutObjectRequest.builder()
+                            .bucket(bucket)
+                            .key(storedName)
+                            .contentType(file.getContentType())
+                            .build(),
+                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+            );
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Upload failed: " + e.getMessage());
+        }
+
         return storageUrl + "/object/public/" + bucket + "/" + storedName;
     }
 
