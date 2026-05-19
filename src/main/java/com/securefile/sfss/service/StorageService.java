@@ -64,7 +64,7 @@ public class StorageService {
         return S3Client.builder()
                 .endpointOverride(URI.create(storageUrl + "/s3")) // ✅ FIXED
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey))) //                .region(Region.of(region))
+                        AwsBasicCredentials.create(accessKey, secretKey))).region(Region.of(region))
 
 
                 .forcePathStyle(true)
@@ -88,7 +88,10 @@ public class StorageService {
             throw new RuntimeException("Upload failed: " + e.getMessage());
         }
 
-        return storageUrl + "/object/public/" + bucket + "/" + storedName;
+//        return storageUrl + "/object/public/" + bucket + "/" + storedName;
+
+        return "https://wridsdirgmjxwlnszyvp.supabase.co/storage/v1/object/public/"
+                + bucket + "/" + storedName;
     }
 
     // Download file stream
