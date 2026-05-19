@@ -3,6 +3,7 @@ package com.securefile.sfss.controller;
 import com.securefile.sfss.model.FileEntity;
 import com.securefile.sfss.model.User;
 import com.securefile.sfss.service.FileService;
+import com.securefile.sfss.service.StorageService;
 import com.securefile.sfss.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,7 @@ import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -111,6 +113,65 @@ public class FileController {
     }
 
     // ─── PREVIEW (images, PDFs as binary; code as text) ──────
+//    @GetMapping("/preview/{fileId}")
+//    public ResponseEntity<?> preview(@PathVariable Integer fileId, HttpSession session) {
+//        User user = getUser(session);
+//        if (user == null) return ResponseEntity.status(401).build();
+//        try {
+//            Optional<FileEntity> opt = fileService.getFile(fileId, user);
+//            if (opt.isEmpty()) return ResponseEntity.notFound().build();
+//            FileEntity fe = opt.get();
+//
+//            String ct = fe.getFileType() != null ? fe.getFileType() : "application/octet-stream";
+//            java.nio.file.Path path = Paths.get(fe.getStoragePath());
+//
+//            if (!Files.exists(path))
+//                return ResponseEntity.status(404).body("File not found on disk");
+//
+//            // Images and PDFs — serve as binary inline
+//            if (ct.startsWith("image/") || ct.contains("pdf")) {
+//                Resource resource = new UrlResource(path.toUri());
+//                return ResponseEntity.ok()
+//                        .contentType(MediaType.parseMediaType(ct))
+//                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fe.getFileName() + "\"")
+//                        .body(resource);
+//            }
+//
+//            // Text / Code — serve as UTF-8 plain text
+//            String content = Files.readString(path, StandardCharsets.UTF_8);
+//            return ResponseEntity.ok()
+//                    .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
+//                    .body(content);
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(500).body("Preview unavailable: " + e.getMessage());
+//        }
+//    }
+//
+//    // ─── DOWNLOAD ─────────────────────────────────────────────
+//    @GetMapping("/download/{fileId}")
+//    public ResponseEntity<Resource> download(@PathVariable Integer fileId, HttpSession session) {
+//        User user = getUser(session);
+//        if (user == null) return ResponseEntity.status(401).build();
+//        try {
+//            Optional<FileEntity> opt = fileService.getFile(fileId, user);
+//            if (opt.isEmpty()) return ResponseEntity.notFound().build();
+//            FileEntity fe = opt.get();
+//            Resource resource = new UrlResource(Paths.get(fe.getStoragePath()).toUri());
+//            return ResponseEntity.ok()
+//                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+//                    .header(HttpHeaders.CONTENT_DISPOSITION,
+//                            "attachment; filename=\"" + fe.getFileName() + "\"")
+//                    .body(resource);
+//        } catch (Exception e) {
+//            return ResponseEntity.status(500).build();
+//        }
+//    } //commented code is old code that run in local
+
+//For Online preview and upload
+    @Autowired
+    private StorageService storageService;
+
     @GetMapping("/preview/{fileId}")
     public ResponseEntity<?> preview(@PathVariable Integer fileId, HttpSession session) {
         User user = getUser(session);
@@ -119,48 +180,44 @@ public class FileController {
             Optional<FileEntity> opt = fileService.getFile(fileId, user);
             if (opt.isEmpty()) return ResponseEntity.notFound().build();
             FileEntity fe = opt.get();
-
             String ct = fe.getFileType() != null ? fe.getFileType() : "application/octet-stream";
-            java.nio.file.Path path = Paths.get(fe.getStoragePath());
 
-            if (!Files.exists(path))
-                return ResponseEntity.status(404).body("File not found on disk");
+            InputStream stream = storageService.downloadFile(fe.getStoredName());
 
-            // Images and PDFs — serve as binary inline
             if (ct.startsWith("image/") || ct.contains("pdf")) {
-                Resource resource = new UrlResource(path.toUri());
                 return ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(ct))
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fe.getFileName() + "\"")
-                        .body(resource);
+                        .header(HttpHeaders.CONTENT_DISPOSITION,
+                                "inline; filename=\"" + fe.getFileName() + "\"")
+                        .body(new org.springframework.core.io.InputStreamResource(stream));
             }
 
-            // Text / Code — serve as UTF-8 plain text
-            String content = Files.readString(path, StandardCharsets.UTF_8);
+            String content = new String(stream.readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8);
             return ResponseEntity.ok()
-                    .contentType(new MediaType("text", "plain", StandardCharsets.UTF_8))
+                    .contentType(new MediaType("text","plain",
+                            java.nio.charset.StandardCharsets.UTF_8))
                     .body(content);
-
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Preview unavailable: " + e.getMessage());
+            return ResponseEntity.status(500).body("Preview unavailable");
         }
     }
 
-    // ─── DOWNLOAD ─────────────────────────────────────────────
     @GetMapping("/download/{fileId}")
-    public ResponseEntity<Resource> download(@PathVariable Integer fileId, HttpSession session) {
+    public ResponseEntity<org.springframework.core.io.InputStreamResource> download(
+            @PathVariable Integer fileId, HttpSession session) {
         User user = getUser(session);
         if (user == null) return ResponseEntity.status(401).build();
         try {
             Optional<FileEntity> opt = fileService.getFile(fileId, user);
             if (opt.isEmpty()) return ResponseEntity.notFound().build();
             FileEntity fe = opt.get();
-            Resource resource = new UrlResource(Paths.get(fe.getStoragePath()).toUri());
+            InputStream stream = storageService.downloadFile(fe.getStoredName());
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + fe.getFileName() + "\"")
-                    .body(resource);
+                    .body(new org.springframework.core.io.InputStreamResource(stream));
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
         }

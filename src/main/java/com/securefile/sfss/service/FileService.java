@@ -132,44 +132,76 @@ public class FileService {
     }
 
     // ─── UPLOAD ───────────────────────────────────────────────
+//    public Map<String, Object> uploadFile(MultipartFile file,
+//                                          Integer folderId, User user) throws IOException {
+//        File dir = new File(uploadDir);
+//        if (!dir.exists()) dir.mkdirs();
+//
+//        String originalName = file.getOriginalFilename();
+//        String ext = (originalName != null && originalName.contains("."))
+//                ? originalName.substring(originalName.lastIndexOf(".")) : "";
+//        String storedName = UUID.randomUUID() + ext;
+//        Path savePath = Paths.get(uploadDir, storedName);
+//        Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
+//
+//        FileEntity fe = new FileEntity();
+//        fe.setFileName(originalName);
+//        fe.setStoredName(storedName);
+//        fe.setFileType(file.getContentType());
+//        fe.setFileSize(file.getSize());
+//        fe.setStoragePath(savePath.toString());
+//        fe.setUser(user);
+//
+//        if (folderId != null) {
+//            folderRepository.findByFolderIdAndUser(folderId, user).ifPresent(fe::setFolder);
+//        } else {
+//            String autoFolder = getAutoFolderName(file.getContentType(), originalName);
+//// Code files physically "Others" mein store hongi — UI subcategories handle karegi
+//            String physicalFolder = autoFolder.startsWith("Code") ? "Others" : autoFolder;
+//            fe.setFolder(getOrCreateAutoFolder(physicalFolder, user));
+//        }
+//
+//        fileRepository.save(fe);
+//        logActivity(user, fe, "UPLOAD");
+//
+//        return Map.of(
+//                "success", true,
+//                "fileName", originalName,
+//                "fileId", fe.getFileId(),
+//                "category", fe.getFolder() != null ? fe.getFolder().getFolderName() : "Root"
+//        );
+//    }
+
+        //Upload change for SupaBase
+@Autowired
+private StorageService storageService;
+
     public Map<String, Object> uploadFile(MultipartFile file,
                                           Integer folderId, User user) throws IOException {
-        File dir = new File(uploadDir);
-        if (!dir.exists()) dir.mkdirs();
-
         String originalName = file.getOriginalFilename();
         String ext = (originalName != null && originalName.contains("."))
                 ? originalName.substring(originalName.lastIndexOf(".")) : "";
         String storedName = UUID.randomUUID() + ext;
-        Path savePath = Paths.get(uploadDir, storedName);
-        Files.copy(file.getInputStream(), savePath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Cloud storage pe upload karo
+        String publicPath = storageService.uploadFile(storedName, file);
 
         FileEntity fe = new FileEntity();
         fe.setFileName(originalName);
         fe.setStoredName(storedName);
         fe.setFileType(file.getContentType());
         fe.setFileSize(file.getSize());
-        fe.setStoragePath(savePath.toString());
+        fe.setStoragePath(storedName); // sirf naam store karo, URL nahi
         fe.setUser(user);
 
-        if (folderId != null) {
-            folderRepository.findByFolderIdAndUser(folderId, user).ifPresent(fe::setFolder);
-        } else {
-            String autoFolder = getAutoFolderName(file.getContentType(), originalName);
-// Code files physically "Others" mein store hongi — UI subcategories handle karegi
-            String physicalFolder = autoFolder.startsWith("Code") ? "Others" : autoFolder;
-            fe.setFolder(getOrCreateAutoFolder(physicalFolder, user));
-        }
+        String autoFolder = getAutoFolderName(file.getContentType(), originalName);
+        String physicalFolder = autoFolder.startsWith("Code") ? "Others" : autoFolder;
+        fe.setFolder(getOrCreateAutoFolder(physicalFolder, user));
 
         fileRepository.save(fe);
         logActivity(user, fe, "UPLOAD");
 
-        return Map.of(
-                "success", true,
-                "fileName", originalName,
-                "fileId", fe.getFileId(),
-                "category", fe.getFolder() != null ? fe.getFolder().getFolderName() : "Root"
-        );
+        return Map.of("success", true, "fileName", originalName, "fileId", fe.getFileId());
     }
 
     // ─── CONSOLIDATED STATS (9 main categories) ───────────────
