@@ -17,19 +17,20 @@ import java.net.URI;
 @Service
 public class StorageService {
 
-    @Value("${supabase.storage.url}")
+//    @Value("${supabase.storage.url}")
+    @Value("${SUPABASE_STORAGE_URL}")
     private String storageUrl;
 
 //    @Value("${supabase.storage.key}")
 //    private String storageKey;
 
-    @Value("${supabase.storage.access-key}")
+    @Value("${supabase_storage_access_key}")
     private String accessKey;
 
-    @Value("${supabase.storage.secret-key}")
+    @Value("${supabase_storage_secret_key}")
     private String secretKey;
 
-    @Value("${supabase.storage.bucket}")
+    @Value("${SUPABASE_STORAGE_BUCKET}")
     private String bucket;
 
     @Value("${supabase.storage.region:ap-south-1}")
@@ -62,11 +63,10 @@ public class StorageService {
 
     private S3Client getClient() {
         return S3Client.builder()
-                .endpointOverride(URI.create(storageUrl + "/s3")) // ✅ FIXED
+                .endpointOverride(URI.create(storageUrl)) // ✅ NO /s3
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey))).region(Region.of(region))
-
-
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .region(Region.of(region))
                 .forcePathStyle(true)
                 .build();
     }
