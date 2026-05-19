@@ -57,5 +57,11 @@ public class AuthController {
                 "userId", userId,
                 "name", session.getAttribute("userName")
         ));
+
+    }
+    @GetMapping("/")
+    public void redirect(jakarta.servlet.http.HttpServletResponse response)
+            throws java.io.IOException {
+        response.sendRedirect("/login.html");
     }
 }
