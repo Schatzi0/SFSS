@@ -20,8 +20,14 @@ public class StorageService {
     @Value("${supabase.storage.url}")
     private String storageUrl;
 
-    @Value("${supabase.storage.key}")
-    private String storageKey;
+//    @Value("${supabase.storage.key}")
+//    private String storageKey;
+
+    @Value("${supabase.storage.access-key}")
+    private String accessKey;
+
+    @Value("${supabase.storage.secret-key}")
+    private String secretKey;
 
     @Value("${supabase.storage.bucket}")
     private String bucket;
@@ -58,8 +64,9 @@ public class StorageService {
         return S3Client.builder()
                 .endpointOverride(URI.create(storageUrl + "/s3")) // ✅ FIXED
                 .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create("supabase", storageKey))) // ✅ FIXED
-                .region(Region.of(region))
+                        AwsBasicCredentials.create(accessKey, secretKey))) //                .region(Region.of(region))
+
+
                 .forcePathStyle(true)
                 .build();
     }
