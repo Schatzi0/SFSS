@@ -17,117 +17,55 @@ import java.net.URI;
 @Service
 public class StorageService {
 
-////    @Value("${supabase.storage.url}")
-//    @Value("${SUPABASE_STORAGE_URL}")
-//    private String storageUrl;
-//
-////    @Value("${supabase.storage.key}")
-////    private String storageKey;
-//
-//    @Value("${supabase_storage_access_key}")
-//    private String accessKey;
-//
-//    @Value("${supabase_storage_secret_key}")
-//    private String secretKey;
-//
-//    @Value("${SUPABASE_STORAGE_BUCKET}")
-//    private String bucket;
-//
-//    @Value("${supabase.storage.region:ap-south-1}")
-//    private String region;
+    @Value("${supabase.storage.url}")
+    private String storageUrl;
 
-@Value("${SUPABASE_STORAGE_URL}")
-private String storageUrl;
-
-    @Value("${SUPABASE_STORAGE_ACCESS_KEY}")
+    @Value("${supabase.storage.access-key}")
     private String accessKey;
 
-    @Value("${SUPABASE_STORAGE_SECRET_KEY}")
+    @Value("${supabase.storage.secret-key}")
     private String secretKey;
 
-    @Value("${SUPABASE_STORAGE_URL}")
+    @Value("${supabase.storage.bucket}")
     private String bucket;
 
-//    @Value("${supabase.storage.region:ap-south-1}")
-//    private String region;
-
-//    private S3Client getClient() {
-//        // Supabase Storage is S3-compatible
-//        return S3Client.builder()
-//                .endpointOverride(URI.create(storageUrl))
-//                .credentialsProvider(StaticCredentialsProvider.create(
-//                        AwsBasicCredentials.create("anystring", storageKey)))
-//                .region(Region.of(region))
-//                .forcePathStyle(true)
-//                .build();
-//    }
-//
-//    // Upload file to Supabase Storage
-//    public String uploadFile(String storedName, MultipartFile file) throws IOException {
-//        S3Client s3 = getClient();
-//        s3.putObject(
-//                PutObjectRequest.builder()
-//                        .bucket(bucket)
-//                        .key(storedName)
-//                        .contentType(file.getContentType())
-//                        .build(),
-//                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-//        );
-//        return storageUrl + "/object/public/" + bucket + "/" + storedName;
-//    }
+    @Value("${supabase.storage.region:ap-south-1}")
+    private String region;
 
     private S3Client getClient() {
         return S3Client.builder()
-                .endpointOverride(
-                        URI.create(storageUrl + "/storage/v1/s3")
-                )
-                .credentialsProvider(
-                        StaticCredentialsProvider.create(
-                                AwsBasicCredentials.create(accessKey, secretKey)
-                        )
-                )
-//                .region(Region.of(region))
+                .endpointOverride(URI.create(storageUrl))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .region(Region.of(region))
                 .forcePathStyle(true)
                 .build();
     }
 
     public String uploadFile(String storedName, MultipartFile file) throws IOException {
         S3Client s3 = getClient();
-
-        try {
-            s3.putObject(
-                    PutObjectRequest.builder()
-                            .bucket(bucket)
-                            .key(storedName)
-                            .contentType(file.getContentType())
-                            .build(),
-                    RequestBody.fromInputStream(file.getInputStream(), file.getSize())
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Upload failed: " + e.getMessage());
-        }
-
-//        return storageUrl + "/object/public/" + bucket + "/" + storedName;
-
+        s3.putObject(
+                PutObjectRequest.builder()
+                        .bucket(bucket)
+                        .key(storedName)
+                        .contentType(file.getContentType())
+                        .build(),
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize())
+        );
         return "https://wridsdirgmjxwlnszyvp.supabase.co/storage/v1/object/public/"
                 + bucket + "/" + storedName;
     }
 
-    // Download file stream
     public InputStream downloadFile(String storedName) {
-        S3Client s3 = getClient();
-        return s3.getObject(GetObjectRequest.builder()
+        return getClient().getObject(GetObjectRequest.builder()
                 .bucket(bucket)
                 .key(storedName)
                 .build());
     }
 
-    // Delete file
     public void deleteFile(String storedName) {
         try {
-            S3Client s3 = getClient();
-            s3.deleteObject(DeleteObjectRequest.builder()
+            getClient().deleteObject(DeleteObjectRequest.builder()
                     .bucket(bucket)
                     .key(storedName)
                     .build());
