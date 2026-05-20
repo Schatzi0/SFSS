@@ -17,24 +17,39 @@ import java.net.URI;
 @Service
 public class StorageService {
 
-//    @Value("${supabase.storage.url}")
-    @Value("${SUPABASE_STORAGE_URL}")
-    private String storageUrl;
+////    @Value("${supabase.storage.url}")
+//    @Value("${SUPABASE_STORAGE_URL}")
+//    private String storageUrl;
+//
+////    @Value("${supabase.storage.key}")
+////    private String storageKey;
+//
+//    @Value("${supabase_storage_access_key}")
+//    private String accessKey;
+//
+//    @Value("${supabase_storage_secret_key}")
+//    private String secretKey;
+//
+//    @Value("${SUPABASE_STORAGE_BUCKET}")
+//    private String bucket;
+//
+//    @Value("${supabase.storage.region:ap-south-1}")
+//    private String region;
 
-//    @Value("${supabase.storage.key}")
-//    private String storageKey;
+@Value("${SUPABASE_STORAGE_URL}")
+private String storageUrl;
 
-    @Value("${supabase_storage_access_key}")
+    @Value("${SUPABASE_STORAGE_ACCESS_KEY}")
     private String accessKey;
 
-    @Value("${supabase_storage_secret_key}")
+    @Value("${SUPABASE_STORAGE_SECRET_KEY}")
     private String secretKey;
 
-    @Value("${SUPABASE_STORAGE_BUCKET}")
+    @Value("${SUPABASE_STORAGE_URL}")
     private String bucket;
 
-    @Value("${supabase.storage.region:ap-south-1}")
-    private String region;
+//    @Value("${supabase.storage.region:ap-south-1}")
+//    private String region;
 
 //    private S3Client getClient() {
 //        // Supabase Storage is S3-compatible
@@ -63,10 +78,15 @@ public class StorageService {
 
     private S3Client getClient() {
         return S3Client.builder()
-                .endpointOverride(URI.create(storageUrl)) // ✅ NO /s3
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(accessKey, secretKey)))
-                .region(Region.of(region))
+                .endpointOverride(
+                        URI.create(storageUrl + "/storage/v1/s3")
+                )
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(
+                                AwsBasicCredentials.create(accessKey, secretKey)
+                        )
+                )
+//                .region(Region.of(region))
                 .forcePathStyle(true)
                 .build();
     }

@@ -628,24 +628,53 @@
         var n = inp.files.length;
         document.getElementById('dtxt').textContent = n === 1 ? inp.files[0].name : n + ' files selected';
     }
-    async function doUpload() {
-        var inp = document.getElementById('ufi');
-        if (!inp.files.length) { toast('Select a file first', 'error'); return; }
-        var fid = document.getElementById('fsel').value;
-        var ok = 0;
-        toast('Uploading...', 'info');
-        for (var i = 0; i < inp.files.length; i++) {
-            var fd = new FormData();
-            fd.append('file', inp.files[i]);
-            if (fid) fd.append('folderId', fid);
-            var r = await fetch('/api/files/upload', {method:'POST', body:fd});
-            if (r.ok) ok++;
-        }
-        closeUpload();
-        toast(ok + ' file(s) uploaded!', 'success');
-        await loadFolders();
-        await refresh();
+<!--    async function doUpload() {-->
+<!--        var inp = document.getElementById('ufi');-->
+<!--        if (!inp.files.length) { toast('Select a file first', 'error'); return; }-->
+<!--        var fid = document.getElementById('fsel').value;-->
+<!--        var ok = 0;-->
+<!--        toast('Uploading...', 'info');-->
+<!--        for (var i = 0; i < inp.files.length; i++) {-->
+<!--            var fd = new FormData();-->
+<!--            fd.append('file', inp.files[i]);-->
+<!--            if (fid) fd.append('folderId', fid);-->
+<!--            var r = await fetch('/api/files/upload', {method:'POST', body:fd});-->
+<!--            if (r.ok) ok++;-->
+<!--        }-->
+<!--        closeUpload();-->
+<!--        toast(ok + ' file(s) uploaded!', 'success');-->
+<!--        await loadFolders();-->
+<!--        await refresh();-->
+<!--    }-->
+//Above is OG code, below is for handle 401
+async function doUpload() {
+  var inp = document.getElementById('ufi');
+  if (!inp.files.length) { toast('Select a file first', 'error'); return; }
+  var fid = document.getElementById('fsel').value;
+  var ok = 0; var fail = 0;
+  toast('Uploading...', 'info');
+  for (var i = 0; i < inp.files.length; i++) {
+    var fd = new FormData();
+    fd.append('file', inp.files[i]);
+    if (fid) fd.append('folderId', fid);
+    var r = await fetch('/api/files/upload', {method:'POST', body:fd});
+    if (r.status === 401) {
+      toast('Session expired — please login again', 'error');
+      setTimeout(function(){ location.href = '/login.html'; }, 1500);
+      closeUpload();
+      return;
     }
+    if (r.ok) ok++; else fail++;
+  }
+  closeUpload();
+  if (ok > 0) {
+    toast(ok + ' file(s) uploaded!', 'success');
+    await loadFolders();
+    await refresh();
+  } else {
+    toast('Upload failed — check console', 'error');
+  }
+}//changed for dashboard Handle
 
     async function delFile(fid, e) {
         e.stopPropagation();
