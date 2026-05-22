@@ -20,5 +20,11 @@ public class Folder {
     @Column(nullable = false, length = 100)
     private String folderName;
 
+    @Column(name = "is_protected")
+    private Boolean isProtected = false;
+
+    @Column(name = "protection_pin")
+    private String protectionPin;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }
