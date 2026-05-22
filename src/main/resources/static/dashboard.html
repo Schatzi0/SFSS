@@ -312,6 +312,42 @@
         el.innerHTML = h;
     }
 
+
+// renderSB() function mein folders loop
+function renderSB() {
+  var navHome = document.getElementById('navHome');
+
+  // Shared with me nav item add/update
+  var existing = document.getElementById('navShared');
+  if (!existing) {
+    var sharedItem = document.createElement('div');
+    sharedItem.id = 'navShared';
+    sharedItem.className = 'ni' + (ST.view === 'shared' ? ' act' : '');
+    sharedItem.innerHTML = '<span class="ico">🤝</span><span class="lbl">Shared with Me</span>';
+    sharedItem.onclick = function() { showSharedWithMe(); };
+    navHome.parentNode.insertBefore(sharedItem, navHome.nextSibling);
+  } else {
+    existing.className = 'ni' + (ST.view === 'shared' ? ' act' : '');
+  }
+
+  var el = document.getElementById('sbf');
+  if (!folders.length) {
+    el.innerHTML = '<div style="font-size:.73rem;color:#475569;text-align:center;padding:.75rem">No folders yet</div>';
+    return;
+  }
+  var h = '';
+  folders.forEach(function(f) {
+    var act = (ST.view === 'folder' && ST.id === f.folderId) ? ' act' : '';
+    h += '<div class="ni' + act + '" onclick="openFolder(' + f.folderId + ',\'' + esc(f.folderName) + '\')">';
+    h += '<span class="ico">📂</span>';
+    h += '<span class="lbl">' + esc(f.folderName) + '</span>';
+    h += '<span class="cnt">' + f.fileCount + '</span>';
+    h += '<span class="del" onclick="delFolder(' + f.folderId + ',event)">✕</span>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
     async function showHome() {
         setNav('home', null, 'Overview', [{label:'Home'}]);
         var r = await fetch('/api/files/stats');
@@ -490,25 +526,27 @@
         el.innerHTML = h;
     }
 
+//Replaced Code with Old code
     function fileCard(f) {
-        var canP = f.isImage || canPreview(f.fileType, f.fileName);
-        var thumb = f.isImage
-            ? '<img src="/api/files/preview/' + f.fileId + '" loading="lazy"/>'
-            : '<div class="ti">' + fileIcon(f.fileType, f.fileName) + '</div>';
-        var h = '<div class="fc">';
-        h += '<div class="ft">' + thumb;
-        h += '<div class="fov">';
-        if (canP) h += '<button class="ob" onclick="prevFile(' + f.fileId + ',\'' + esc(f.fileName) + '\',\'' + (f.fileType||'') + '\')">👁 View</button>';
-        h += '<a href="/api/files/download/' + f.fileId + '" class="ob" onclick="event.stopPropagation()">⬇</a>';
-        h += '<button class="ob obd" onclick="delFile(' + f.fileId + ',event)">🗑</button>';
-        h += '</div></div>';
-        h += '<div class="fb">';
-        h += '<div class="fn" title="' + esc(f.fileName) + '">' + esc(f.fileName) + '</div>';
-        h += '<div class="fs2">' + f.fileSize + '</div>';
-        h += '<div class="fd">' + fmtDate(f.uploadedAt) + '</div>';
-        h += '</div></div>';
-        return h;
-    }
+  var canP = f.isImage || canPreview(f.fileType, f.fileName);
+  var thumb = f.isImage
+    ? '<img src="/api/files/preview/' + f.fileId + '" loading="lazy"/>'
+    : '<div class="ti">' + fileIcon(f.fileType, f.fileName) + '</div>';
+  var h = '<div class="fc">';
+  h += '<div class="ft">' + thumb;
+  h += '<div class="fov">';
+  if (canP) h += '<button class="ob" onclick="prevFile(' + f.fileId + ',\'' + esc(f.fileName) + '\',\'' + (f.fileType||'') + '\',false)">👁 View</button>';
+  h += '<a href="/api/files/download/' + f.fileId + '" class="ob" onclick="event.stopPropagation()">⬇</a>';
+  h += '<button class="ob" style="background:rgba(99,102,241,.85);color:#fff" onclick="openShareModal(' + f.fileId + ',\'' + esc(f.fileName) + '\',event)">🔗</button>';
+  h += '<button class="ob obd" onclick="delFile(' + f.fileId + ',event)">🗑</button>';
+  h += '</div></div>';
+  h += '<div class="fb">';
+  h += '<div class="fn" title="' + esc(f.fileName) + '">' + esc(f.fileName) + '</div>';
+  h += '<div class="fs2">' + f.fileSize + '</div>';
+  h += '<div class="fd">' + fmtDate(f.uploadedAt) + '</div>';
+  h += '</div></div>';
+  return h;
+}
 
     function canPreview(type, name) {
         if (!name) return false;
@@ -521,54 +559,40 @@
         return exts.some(function(e) { return n.endsWith(e); });
     }
 
-    async function prevFile(fid, fname, ftype) {
-        document.getElementById('pov').classList.add('show');
-        document.getElementById('ptitle').textContent = fname;
-        document.getElementById('picon').textContent = fileIcon(ftype, fname);
-        document.getElementById('pdl').href = '/api/files/download/' + fid;
-        document.getElementById('plang').style.display = 'none';
-        document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:4rem;color:#475569">Loading preview...</div>';
+    async function prevFile(fid, fname, ftype, isShared) {
+  var baseUrl = isShared ? '/api/share' : '/api/files';
+  document.getElementById('pov').classList.add('show');
+  document.getElementById('ptitle').textContent = fname;
+  document.getElementById('picon').textContent = fileIcon(ftype, fname);
+  document.getElementById('pdl').href = baseUrl + '/download/' + fid;
+  document.getElementById('plang').style.display = 'none';
+  document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:4rem;color:#475569">Loading preview...</div>';
 
-        try {
-            var resp = await fetch('/api/files/preview/' + fid);
-            if (!resp.ok) throw new Error('fail');
-
-            if (ftype && ftype.startsWith('image/')) {
-                var blob = await resp.blob();
-                var url = URL.createObjectURL(blob);
-                document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:1.25rem;background:#0a0f1a;min-height:300px;display:flex;align-items:center;justify-content:center"><img src="' + url + '" style="max-width:100%;max-height:78vh;border-radius:8px;object-fit:contain"/></div>';
-            } else if (ftype && ftype.includes('pdf')) {
-                var blob2 = await resp.blob();
-                var url2 = URL.createObjectURL(blob2);
-                document.getElementById('pbody').innerHTML = '<embed src="' + url2 + '" type="application/pdf" style="width:100%;height:80vh;display:block"/>';
-            } else {
-                var text = await resp.text();
-                var lang = getLang(fname);
-                if (lang !== 'Plain Text') {
-                    var lb = document.getElementById('plang');
-                    lb.textContent = lang; lb.style.display = 'inline';
-                }
-                var lines = text.split('\n');
-                var highlighted = null;
-                if (window.hljs) {
-                    var hl = hljsLang(fname);
-                    if (hl) {
-                        try { highlighted = hljs.highlight(text, {language:hl, ignoreIllegals:true}).value.split('\n'); } catch(ex) {}
-                    }
-                }
-                var h = '<div class="cv"><table>';
-                lines.forEach(function(line, i) {
-                    var lc = highlighted ? (highlighted[i] || '') : esc(line);
-                    h += '<tr><td class="ln">' + (i+1) + '</td><td class="lc">' + lc + '</td></tr>';
-                });
-                h += '</table></div>';
-                document.getElementById('pbody').innerHTML = h;
-            }
-        } catch(ex) {
-            document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:3rem;color:#ef4444">Preview unavailable — <a href="/api/files/download/' + fid + '" style="color:#6366f1">Download instead</a></div>';
-        }
+  try {
+    var resp = await fetch(baseUrl + '/preview/' + fid);
+    if (!resp.ok) throw new Error('fail');
+    if (ftype && ftype.startsWith('image/')) {
+      var blob = await resp.blob();
+      var url = URL.createObjectURL(blob);
+      document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:1.25rem;background:#0a0f1a;min-height:300px;display:flex;align-items:center;justify-content:center"><img src="' + url + '" style="max-width:100%;max-height:78vh;border-radius:8px;object-fit:contain"/></div>';
+    } else if (ftype && ftype.includes('pdf')) {
+      var blob2 = await resp.blob();
+      var url2 = URL.createObjectURL(blob2);
+      document.getElementById('pbody').innerHTML = '<embed src="' + url2 + '" type="application/pdf" style="width:100%;height:80vh;display:block"/>';
+    } else {
+      var text = await resp.text();
+      var lang = getLang(fname);
+      if (lang !== 'Plain Text') { var lb = document.getElementById('plang'); lb.textContent = lang; lb.style.display = 'inline'; }
+      var lines = text.split('\n');
+      var h = '<div class="cv"><table>';
+      lines.forEach(function(line, i) { h += '<tr><td class="ln">' + (i+1) + '</td><td class="lc">' + esc(line) + '</td></tr>'; });
+      h += '</table></div>';
+      document.getElementById('pbody').innerHTML = h;
     }
-
+  } catch(ex) {
+    document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:3rem;color:#ef4444">Preview unavailable</div>';
+  }
+} //Change Prev File
     function closePrev() { document.getElementById('pov').classList.remove('show'); }
 
     function getLang(fname) {
@@ -765,6 +789,149 @@
             document.getElementById('fmod').classList.remove('show');
         }
     });
+
+    // ── SHARING ───────────────────────────────────────────────
+var currentShareFileId = null;
+
+function openShareModal(fileId, fileName, e) {
+  e.stopPropagation();
+  currentShareFileId = fileId;
+  document.getElementById('shareFileName').textContent = fileName;
+  document.getElementById('shareEmail').value = '';
+  document.getElementById('shareResult').innerHTML = '';
+  document.getElementById('shareModal').classList.add('show');
+
+  // Load who already has access
+  loadShareList(fileId);
+  setTimeout(function(){ document.getElementById('shareEmail').focus(); }, 50);
+}
+
+async function loadShareList(fileId) {
+  var r = await fetch('/api/share/sent/' + fileId);
+  if (!r.ok) return;
+  var list = await r.json();
+  var el = document.getElementById('shareList');
+  if (!list.length) {
+    el.innerHTML = '<div style="font-size:.75rem;color:var(--mu)">Not shared with anyone yet</div>';
+    return;
+  }
+  var h = '<div style="font-size:.75rem;font-weight:700;color:var(--mu);margin-bottom:.4rem">Shared with:</div>';
+  list.forEach(function(s) {
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .6rem;background:var(--bg);border-radius:8px;margin-bottom:.3rem;font-size:.8rem">';
+    h += '<span>👤 ' + esc(s.sharedWith) + ' <span style="color:var(--mu)">(' + s.permission + ')</span></span>';
+    h += '<button onclick="revokeShare(' + s.shareId + ')" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:.8rem">✕ Remove</button>';
+    h += '</div>';
+  });
+  el.innerHTML = h;
+}
+
+async function doShare() {
+  var email = document.getElementById('shareEmail').value.trim();
+  var perm = document.getElementById('sharePerm').value;
+  var res = document.getElementById('shareResult');
+  if (!email) { res.innerHTML = '<span style="color:var(--rd)">Enter email</span>'; return; }
+
+  var r = await fetch('/api/share', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({fileId: String(currentShareFileId), email: email, permission: perm})
+  });
+  var d = await r.json();
+  if (d.error) {
+    res.innerHTML = '<span style="color:var(--rd)">' + esc(d.error) + '</span>';
+  } else {
+    res.innerHTML = '<span style="color:var(--gr)">✅ ' + esc(d.message) + '</span>';
+    document.getElementById('shareEmail').value = '';
+    loadShareList(currentShareFileId);
+  }
+}
+
+async function revokeShare(shareId) {
+  var r = await fetch('/api/share/' + shareId, {method:'DELETE'});
+  if (r.ok) loadShareList(currentShareFileId);
+}
+
+async function showSharedWithMe() {
+  setNav('shared', null, '🤝 Shared with Me',
+    [{label:'Home',fn:'showHome'},{label:'Shared with Me'}]);
+  var r = await fetch('/api/share/received');
+  if (!r.ok) { document.getElementById('content').innerHTML = '<div style="padding:2rem;color:var(--mu)">Could not load</div>'; return; }
+  var files = await r.json();
+
+  var el = document.getElementById('content');
+  if (!files.length) {
+    el.innerHTML = '<div class="empty"><div class="ei">🤝</div><h3>No files shared with you</h3><p style="font-size:.82rem">When someone shares a file, it appears here</p></div>';
+    return;
+  }
+
+  var h = '<div class="shd"><h3>Shared with Me</h3><span style="font-size:.78rem;color:var(--mu)">' + files.length + ' file(s)</span></div>';
+  h += '<div class="fg">';
+  files.forEach(function(f) {
+    var canP = f.isImage || canPreview(f.fileType, f.fileName);
+    var thumb = f.isImage
+      ? '<img src="/api/share/preview/' + f.fileId + '" loading="lazy"/>'
+      : '<div class="ti">' + fileIcon(f.fileType, f.fileName) + '</div>';
+    h += '<div class="fc">';
+    h += '<div class="ft">' + thumb;
+    h += '<div class="fov">';
+    if (canP) h += '<button class="ob" onclick="prevFile(' + f.fileId + ',\'' + esc(f.fileName) + '\',\'' + (f.fileType||'') + '\',true)">👁 View</button>';
+    if (f.permission !== 'view') h += '<a href="/api/share/download/' + f.fileId + '" class="ob">⬇</a>';
+    h += '</div></div>';
+    h += '<div class="fb">';
+    h += '<div class="fn">' + esc(f.fileName) + '</div>';
+    h += '<div class="fs2">' + f.fileSize + '</div>';
+    h += '<div class="fd">By ' + esc(f.sharedBy) + ' · ' + f.permission + '</div>';
+    h += '</div></div>';
+  });
+  h += '</div>';
+  el.innerHTML = h;
+}//Sharing Code
+
+
+//Keyboard Shortcut
+    document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closePrev();
+    document.getElementById('umod').classList.remove('show');
+    document.getElementById('fmod').classList.remove('show');
+    document.getElementById('shareModal').classList.remove('show');
+  }
+});
+
+
 </script>
+
+<!-- SHARE MODAL -->
+<div class="ov" id="shareModal">
+    <div class="modal" style="width:460px">
+        <div class="mh">
+            <h3>🔗 Share File</h3>
+            <button class="mcl" onclick="document.getElementById('shareModal').classList.remove('show')">✕</button>
+        </div>
+        <div style="font-size:.82rem;color:var(--mu);margin-bottom:1rem" id="shareFileName"></div>
+
+        <div class="mfg">
+            <label class="mfl">Share with (Email)</label>
+            <input type="email" class="mfi" id="shareEmail" placeholder="user@example.com"
+                   onkeydown="if(event.key==='Enter')doShare()"/>
+        </div>
+        <div class="mfg">
+            <label class="mfl">Permission</label>
+            <select class="mfs" id="sharePerm">
+                <option value="view">👁 View only</option>
+                <option value="download">⬇ View & Download</option>
+            </select>
+        </div>
+        <div id="shareResult" style="font-size:.82rem;margin-bottom:.75rem;min-height:20px"></div>
+
+        <div id="shareList" style="margin-bottom:1rem"></div>
+
+        <div class="mft">
+            <button class="bc2" onclick="document.getElementById('shareModal').classList.remove('show')">Close</button>
+            <button class="bp" onclick="doShare()">Share</button>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

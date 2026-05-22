@@ -15,6 +15,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class FileService {
+    @Autowired
+    private StorageService storageService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -173,8 +175,8 @@ public class FileService {
 //    }
 
 
-@Autowired
-private StorageService storageService;
+//@Autowired
+//private StorageService storageService;
 
     public Map<String, Object> uploadFile(MultipartFile file,
                                           Integer folderId, User user) throws IOException {
@@ -330,12 +332,34 @@ private StorageService storageService;
     }
 
     // ─── DELETE ───────────────────────────────────────────────
+//    public boolean deleteFile(Integer fileId, User user) {
+//        Optional<FileEntity> opt = fileRepository.findByFileIdAndUser(fileId, user);
+//        if (opt.isEmpty()) return false;
+//        FileEntity fe = opt.get();
+//        try { Files.deleteIfExists(Paths.get(fe.getStoragePath())); }
+//        catch (IOException ignored) {}
+//        logActivity(user, fe, "DELETE");
+//        fileRepository.delete(fe);
+//        return true;
+//    }//OLD Code
+
     public boolean deleteFile(Integer fileId, User user) {
         Optional<FileEntity> opt = fileRepository.findByFileIdAndUser(fileId, user);
         if (opt.isEmpty()) return false;
         FileEntity fe = opt.get();
-        try { Files.deleteIfExists(Paths.get(fe.getStoragePath())); }
-        catch (IOException ignored) {}
+
+        // Supabase Storage se delete
+        try {
+            storageService.deleteFile(fe.getStoredName());
+        } catch (Exception ignored) {
+            // Local fallback
+            try {
+                if (fe.getStoragePath() != null)
+                    java.nio.file.Files.deleteIfExists(
+                            java.nio.file.Paths.get(fe.getStoragePath()));
+            } catch (Exception e2) { /* ignore */ }
+        }
+
         logActivity(user, fe, "DELETE");
         fileRepository.delete(fe);
         return true;
