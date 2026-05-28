@@ -15,7 +15,7 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(8);
 
     public String registerUser(RegisterRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) return "EMAIL_EXISTS";

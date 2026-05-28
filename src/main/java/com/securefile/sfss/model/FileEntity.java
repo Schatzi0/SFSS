@@ -36,5 +36,15 @@ public class FileEntity {
     @Column(nullable = false)
     private String storagePath;
 
+    //Rag Field and Genre Field
+    @Column(length = 100)
+    private String genre;
+
+    @Column(name = "genre_sub", length = 100)
+    private String genreSub;
+
+    @Column(name = "rag_indexed")
+    private Boolean ragIndexed = false;
+
     private LocalDateTime uploadedAt = LocalDateTime.now();
 }

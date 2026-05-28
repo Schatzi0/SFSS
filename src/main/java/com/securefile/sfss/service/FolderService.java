@@ -7,56 +7,93 @@ import com.securefile.sfss.repository.FolderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FolderService {
 
-    @Autowired private FolderRepository folderRepository;
-    @Autowired private FileRepository fileRepository;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    @Autowired private FolderRepository folderRepo;
+    @Autowired private FileRepository fileRepo;
+    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(8);
 
-    public Map<String, Object> createFolder(String name, User user) {
-        if (folderRepository.existsByFolderNameAndUser(name, user))
-            return Map.of("error", "Folder already exists");
+    // Create folder (with optional parent)
+    public Map<String, Object> createFolder(String name, User user, Integer parentId) {
+        boolean exists = (parentId == null)
+                ? folderRepo.existsByFolderNameAndUserAndParentFolderId(name, user, null)
+                : folderRepo.existsByFolderNameAndUserAndParentFolderId(name, user, parentId);
+
+        if (exists) return Map.of("error", "Folder already exists here");
+
+        // Validate parent belongs to user
+        if (parentId != null) {
+            var parent = folderRepo.findByFolderIdAndUser(parentId, user);
+            if (parent.isEmpty()) return Map.of("error", "Parent folder not found");
+        }
+
         Folder folder = new Folder();
         folder.setFolderName(name);
         folder.setUser(user);
-        folderRepository.save(folder);
-        return Map.of("success", true, "folderName", name);
+        folder.setParentFolderId(parentId);
+        folderRepo.save(folder);
+        return Map.of("success", true, "folderId", folder.getFolderId(),
+                "folderName", name);
     }
 
-    public List<Map<String, Object>> getUserFolders(User user) {
-        List<Folder> folders = folderRepository.findByUserOrderByCreatedAtDesc(user);
+    // Get all folders as nested structure
+    public List<Map<String, Object>> getUserFoldersNested(User user) {
+        List<Folder> all = folderRepo.findByUserOrderByCreatedAtDesc(user);
+        return buildTree(all, null, user);
+    }
+
+    // Flat list (for dropdowns etc.)
+    public List<Map<String, Object>> getUserFoldersFlat(User user) {
+        return folderRepo.findByUserOrderByCreatedAtDesc(user).stream().map(f -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("folderId", f.getFolderId());
+            m.put("folderName", f.getFolderName());
+            m.put("parentFolderId", f.getParentFolderId());
+            m.put("fileCount", fileRepo.countByFolder(f));
+            m.put("isProtected", Boolean.TRUE.equals(f.getIsProtected()));
+            return m;
+        }).collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> buildTree(List<Folder> all,
+                                                Integer parentId, User user) {
         List<Map<String, Object>> result = new ArrayList<>();
-        for (Folder f : folders) {
-            long count = fileRepository.countByFolder(f);
-            Map<String, Object> map = new HashMap<>();
-            map.put("folderId", f.getFolderId());
-            map.put("folderName", f.getFolderName());
-            map.put("fileCount", count);
-            map.put("isProtected", Boolean.TRUE.equals(f.getIsProtected()));
-            map.put("createdAt", f.getCreatedAt());
-            result.add(map);
+        for (Folder f : all) {
+            boolean matches = (parentId == null && f.getParentFolderId() == null)
+                    || (parentId != null && parentId.equals(f.getParentFolderId()));
+            if (!matches) continue;
+
+            Map<String, Object> m = new HashMap<>();
+            m.put("folderId", f.getFolderId());
+            m.put("folderName", f.getFolderName());
+            m.put("parentFolderId", f.getParentFolderId());
+            m.put("fileCount", fileRepo.countByFolder(f));
+            m.put("isProtected", Boolean.TRUE.equals(f.getIsProtected()));
+            m.put("subFolders", buildTree(all, f.getFolderId(), user));
+            result.add(m);
         }
         return result;
     }
 
     public boolean deleteFolder(Integer folderId, User user) {
-        Optional<Folder> opt = folderRepository.findByFolderIdAndUser(folderId, user);
+        var opt = folderRepo.findByFolderIdAndUser(folderId, user);
         if (opt.isEmpty()) return false;
-        folderRepository.delete(opt.get());
+        folderRepo.delete(opt.get());
         return true;
     }
 
     public Optional<Folder> getFolder(Integer folderId, User user) {
-        return folderRepository.findByFolderIdAndUser(folderId, user);
+        return folderRepo.findByFolderIdAndUser(folderId, user);
     }
 
-    // Set or remove PIN protection
     public Map<String, Object> setProtection(Integer folderId, String pin,
                                              boolean enable, User user) {
-        Optional<Folder> opt = folderRepository.findByFolderIdAndUser(folderId, user);
+        var opt = folderRepo.findByFolderIdAndUser(folderId, user);
         if (opt.isEmpty()) return Map.of("error", "Folder not found");
         Folder folder = opt.get();
         if (enable) {
@@ -68,18 +105,17 @@ public class FolderService {
             folder.setIsProtected(false);
             folder.setProtectionPin(null);
         }
-        folderRepository.save(folder);
+        folderRepo.save(folder);
         return Map.of("success", true,
                 "message", enable ? "Folder protected" : "Protection removed");
     }
 
-    // Verify PIN
     public boolean verifyPin(Integer folderId, String pin, User user) {
-        Optional<Folder> opt = folderRepository.findByFolderIdAndUser(folderId, user);
+        var opt = folderRepo.findByFolderIdAndUser(folderId, user);
         if (opt.isEmpty()) return false;
-        Folder folder = opt.get();
-        if (!Boolean.TRUE.equals(folder.getIsProtected())) return true;
-        if (folder.getProtectionPin() == null) return false;
-        return encoder.matches(pin, folder.getProtectionPin());
+        Folder f = opt.get();
+        if (!Boolean.TRUE.equals(f.getIsProtected())) return true;
+        if (f.getProtectionPin() == null) return false;
+        return encoder.matches(pin, f.getProtectionPin());
     }
 }

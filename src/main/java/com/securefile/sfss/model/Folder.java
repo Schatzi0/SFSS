@@ -26,5 +26,9 @@ public class Folder {
     @Column(name = "protection_pin")
     private String protectionPin;
 
+
+    @Column(name = "parent_folder_id")
+    private Integer parentFolderId;
+
     private LocalDateTime createdAt = LocalDateTime.now();
 }

@@ -54,18 +54,23 @@ async function loadFolders() {
   if (!r.ok) return;
   folders = await r.json();
   renderSB();
+
+  // Upload dropdown — flat list
+  var r2 = await fetch('/api/folders/flat');
+  if (!r2.ok) return;
+  var flat = await r2.json();
   var sel = document.getElementById('fsel');
   sel.innerHTML = '<option value="">🤖 Auto-detect by file type</option>';
-  folders.forEach(function(f) {
+  flat.forEach(function(f) {
     var o = document.createElement('option');
     o.value = f.folderId;
-    o.textContent = '📂 ' + f.folderName;
+    var prefix = f.parentFolderId ? '  └ ' : '';
+    o.textContent = prefix + '📂 ' + f.folderName;
     sel.appendChild(o);
   });
 }
 
 function renderSB() {
-  // Nav items active state
   document.getElementById('navHome').className = 'ni' + (ST.view === 'home' ? ' act' : '');
   document.getElementById('navShared').className = 'ni' + (ST.view === 'shared' ? ' act' : '');
 
@@ -74,19 +79,34 @@ function renderSB() {
     el.innerHTML = '<div style="font-size:.73rem;color:#475569;text-align:center;padding:.75rem">No folders yet</div>';
     return;
   }
+  el.innerHTML = renderFolderTree(folders, 0);
+}
+
+function renderFolderTree(folderList, depth) {
   var h = '';
-  folders.forEach(function(f) {
+  folderList.forEach(function(f) {
     var act = (ST.view === 'folder' && ST.id === f.folderId) ? ' act' : '';
-    var lockIcon = f.isProtected ? '<span class="lock-badge">🔒</span>' : '';
-    h += '<div class="ni' + act + '" onclick="handleFolderClick(' + f.folderId + ',\'' + esc(f.folderName) + '\',' + !!f.isProtected + ')">';
-    h += '<span class="ico">📂</span>';
+    var indent = depth * 14;
+    var lockIcon = f.isProtected ? '<span style="font-size:.6rem;color:#f87171;margin-left:2px">🔒</span>' : '';
+    var hasSubs = f.subFolders && f.subFolders.length > 0;
+    var expandIcon = hasSubs ? '<span style="font-size:.65rem;color:#475569;margin-right:2px">▸</span>' : '';
+
+    h += '<div class="ni' + act + '" style="padding-left:' + (0.65 + depth * 0.9) + 'rem" ' +
+         'onclick="handleFolderClick(' + f.folderId + ',\'' + esc(f.folderName) + '\',' + !!f.isProtected + ')">';
+    h += expandIcon + '<span class="ico">📂</span>';
     h += '<span class="lbl">' + esc(f.folderName) + lockIcon + '</span>';
     h += '<span class="cnt">' + f.fileCount + '</span>';
-    h += '<span class="lock-btn" title="Protect folder" onclick="openSetPinModal(' + f.folderId + ',\'' + esc(f.folderName) + '\',' + !!f.isProtected + ',event)">🔑</span>';
+    h += '<span class="lock-btn" onclick="openSetPinModal(' + f.folderId + ',\'' +
+         esc(f.folderName) + '\',' + !!f.isProtected + ',event)" title="Protect">🔑</span>';
     h += '<span class="del" onclick="delFolder(' + f.folderId + ',event)">✕</span>';
     h += '</div>';
+
+    // Sub-folders
+    if (hasSubs) {
+      h += renderFolderTree(f.subFolders, depth + 1);
+    }
   });
-  el.innerHTML = h;
+  return h;
 }
 
 // ── FOLDER CLICK — checks protection ─────────────────────
@@ -133,6 +153,57 @@ async function showHome() {
   });
   h += '</div><div class="shd"><h3>Recent Uploads</h3><a onclick="showAllFiles()" style="cursor:pointer">View all</a></div>';
   h += '<div class="rl">';
+
+
+
+  // Genre Library section
+  try {
+    var gr = await fetch('/api/rag/genres');
+    if (gr.ok) {
+      var genres = await gr.json();
+      if (genres.length) {
+        // Group by genre
+        var genreMap = {};
+        genres.forEach(function(g) {
+          if (!genreMap[g.genre]) genreMap[g.genre] = {count:0, subs:[]};
+          genreMap[g.genre].count += parseInt(g.count);
+          if (g.genre_sub) genreMap[g.genre].subs.push({sub:g.genre_sub, count:parseInt(g.count)});
+        });
+
+        var genreColors = {
+          'Fiction':'linear-gradient(135deg,#7c3aed,#6d28d9)',
+          'Academic':'linear-gradient(135deg,#2563eb,#1d4ed8)',
+          'Philosophy':'linear-gradient(135deg,#0891b2,#0e7490)',
+          'Professional':'linear-gradient(135deg,#059669,#047857)',
+          'Personal':'linear-gradient(135deg,#d97706,#b45309)',
+          'Reference':'linear-gradient(135deg,#dc2626,#b91c1c)',
+          'Code':'linear-gradient(135deg,#ca8a04,#a16207)',
+          'Other':'linear-gradient(135deg,#475569,#334155)'
+        };
+        var genreIcons = {
+          'Fiction':'📚','Academic':'🎓','Philosophy':'🤔',
+          'Professional':'💼','Personal':'👤','Reference':'📖',
+          'Code':'💻','Uncategorized':'📦','Other':'📦'
+        };
+
+        h += '<div class="shd"><h3>📚 Genre Library</h3>' +
+          '<span style="font-size:.75rem;color:var(--mu)">AI-classified content</span></div>';
+        h += '<div class="cg">';
+        Object.entries(genreMap).forEach(function(e) {
+          var g = e[0], data = e[1];
+          var color = genreColors[g] || 'linear-gradient(135deg,#475569,#334155)';
+          var icon = genreIcons[g] || '📦';
+          h += '<div class="cc" style="background:' + color + '" ' +
+               'onclick="openGenre(\'' + esc(g) + '\')">';
+          h += '<div class="ci">' + icon + '</div>';
+          h += '<div class="ck">' + data.count + '</div>';
+          h += '<div class="cl">' + esc(g) + '</div></div>';
+        });
+        h += '</div>';
+      }
+    }
+  } catch(e) {}
+
   var recent = d.recentFiles || [];
   if (recent.length) {
     recent.forEach(function(f) {
@@ -148,6 +219,59 @@ async function showHome() {
   h += '</div>';
   document.getElementById('content').innerHTML = h;
 }
+
+//Open genre Function
+async function openGenre(genre) {
+  setNav('genre', genre, genreIcons[genre] || '📚' + ' ' + genre,
+    [{label:'Home',fn:'showHome'},{label:genre}]);
+
+  // Show sub-genre breakdown first
+  var r = await fetch('/api/rag/genres');
+  var allGenres = r.ok ? await r.json() : [];
+  var subs = allGenres.filter(function(g) { return g.genre === genre && g.genre_sub; });
+
+  var el = document.getElementById('content');
+  var h = '';
+
+  if (subs.length > 1) {
+    h += '<div class="shd"><h3>Sub-categories</h3></div><div class="sg">';
+    subs.forEach(function(s) {
+      h += '<div class="sc" onclick="openGenreSub(\'' + esc(genre) + '\',\'' +
+           esc(s.genre_sub) + '\')">';
+      h += '<div class="sci">📂</div><div class="scn">' + s.count + '</div>';
+      h += '<div class="scl">' + esc(s.genre_sub) + '</div></div>';
+    });
+    h += '</div>';
+  }
+
+  var r2 = await fetch('/api/files/genre/' + encodeURIComponent(genre));
+  var files = r2.ok ? await r2.json() : [];
+  h += '<div class="shd"><h3>All ' + esc(genre) + ' Files</h3>' +
+    '<span style="font-size:.78rem;color:var(--mu)">' + files.length + ' files</span></div>';
+  if (files.length) {
+    h += '<div class="fg">';
+    files.forEach(function(f) { h += fileCard(f, false); });
+    h += '</div>';
+  } else {
+    h += '<div class="empty"><div style="font-size:3rem;opacity:.4">📚</div>' +
+      '<h3>No files in this genre</h3>' +
+      '<p style="font-size:.82rem">Index your files using ⚡ to auto-classify</p></div>';
+  }
+  el.innerHTML = h;
+}
+
+async function openGenreSub(genre, sub) {
+  setNav('genre-sub', genre + '/' + sub, genre + ' › ' + sub,
+    [{label:'Home',fn:'showHome'},{label:genre,fn:'function(){openGenre(\''+genre+'\')}'},{label:sub}]);
+  var r = await fetch('/api/files/genre/' + encodeURIComponent(genre) + '?sub=' + encodeURIComponent(sub));
+  renderGrid(r.ok ? await r.json() : [], genre + ' › ' + sub);
+}
+
+var genreIcons = {
+  'Fiction':'📚','Academic':'🎓','Philosophy':'🤔',
+  'Professional':'💼','Personal':'👤','Reference':'📖',
+  'Code':'💻','Uncategorized':'📦','Other':'📦'
+};
 
 async function showAllFiles() {
   setNav('all', null, 'All Files', [{label:'Home',fn:'showHome'}]);
@@ -218,12 +342,144 @@ async function openOthersSub(ext) {
 }
 
 // ── FOLDER OPEN ───────────────────────────────────────────
-async function openFolder(fid, name) {
-  setNav('folder', fid, '📂 ' + name, [{label:'Home',fn:'showHome'},{label:name}]);
+async function openFolder(fid, fname, parentName) {
+  var bc = [{label:'Home',fn:'showHome'}];
+  if (parentName) bc.push({label:parentName});
+  bc.push({label:fname});
+  setNav('folder', fid, '📂 ' + fname, bc);
+
+  // Get extension stats first
+  var statsR = await fetch('/api/files/folder/' + fid + '/extstats');
+  var stats = statsR.ok ? await statsR.json() : {};
+  var entries = Object.entries(stats);
+
+  var el = document.getElementById('content');
+  var h = '';
+
+  // Sub-folders section
+  var allFolders = await getAllFoldersFlat();
+  var subs = allFolders.filter(function(f) { return f.parentFolderId === fid; });
+  if (subs.length) {
+    h += '<div class="shd"><h3>📁 Sub-folders</h3>' +
+      '<button onclick="openCreateSubFolder(' + fid + ',\'' + esc(fname) + '\')" ' +
+      'style="font-size:.75rem;color:var(--bl);background:none;border:none;cursor:pointer">+ New sub-folder</button></div>';
+    h += '<div class="cg" style="margin-bottom:1rem">';
+    subs.forEach(function(s) {
+      var lockIco = s.isProtected ? '🔒 ' : '';
+      h += '<div class="cc" style="background:linear-gradient(135deg,#1e293b,#0f172a)" ' +
+           'onclick="handleFolderClick(' + s.folderId + ',\'' + esc(s.folderName) + '\',' + !!s.isProtected + ')">';
+      h += '<div class="ci">📂</div>';
+      h += '<div class="ck" style="font-size:1.3rem">' + lockIco + esc(s.folderName) + '</div>';
+      h += '<div class="cl">' + s.fileCount + ' files</div></div>';
+    });
+    h += '</div>';
+  } else {
+    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">' +
+      '<span style="font-size:.75rem;color:var(--mu)">📂 ' + fname + '</span>' +
+      '<button onclick="openCreateSubFolder(' + fid + ',\'' + esc(fname) + '\')" ' +
+      'style="font-size:.75rem;color:var(--bl);background:none;border:none;cursor:pointer;' +
+      'padding:.2rem .6rem;border:1px solid var(--bl);border-radius:6px">+ Sub-folder</button></div>';
+  }
+
+  // File type tiles
+  if (entries.length) {
+    h += '<div class="shd"><h3>Files by Type</h3></div><div class="cg">';
+    var extColors = {
+      'PDF':'#dc2626','DOCX':'#2563eb','DOC':'#2563eb',
+      'XLSX':'#059669','XLS':'#059669','CSV':'#059669',
+      'PPTX':'#d97706','JPG':'#7c3aed','JPEG':'#7c3aed',
+      'PNG':'#7c3aed','GIF':'#7c3aed','MP4':'#0891b2',
+      'ZIP':'#475569','RAR':'#475569','TXT':'#4f46e5',
+      'JSON':'#ca8a04','JAVA':'#ca8a04','PY':'#4f46e5',
+      'JS':'#ca8a04','HTML':'#dc2626','CSS':'#2563eb'
+    };
+    entries.sort(function(a,b){return b[1]-a[1];}).forEach(function(e) {
+      var ext = e[0], cnt = e[1];
+      var color = extColors[ext] || '#475569';
+      h += '<div class="cc" style="background:linear-gradient(135deg,' + color + ',' + color + 'cc)" ' +
+           'onclick="openFolderByExt(' + fid + ',\'' + esc(fname) + '\',\'' + ext + '\')">';
+      h += '<div class="ci">📄</div>';
+      h += '<div class="ck">' + cnt + '</div>';
+      h += '<div class="cl">.' + ext.toLowerCase() + '</div></div>';
+    });
+    h += '</div>';
+  }
+
+  // All files in folder
   var r = await fetch('/api/files/folder/' + fid);
-  renderGrid(await r.json(), '📂 ' + name);
+  if (!r.ok) { el.innerHTML = h; return; }
+  var files = await r.json();
+  if (files.length) {
+    h += '<div class="shd"><h3>All Files</h3><span style="font-size:.78rem;color:var(--mu)">' +
+      files.length + ' files</span></div>';
+    h += '<div class="fg">';
+    files.forEach(function(f) { h += fileCard(f, false); });
+    h += '</div>';
+  } else {
+    h += '<div class="empty"><div style="font-size:3rem;opacity:.4">📭</div>' +
+      '<h3 style="margin:.75rem 0 .3rem">Empty folder</h3>' +
+      '<p style="font-size:.82rem">Upload files here</p></div>';
+  }
+
+  el.innerHTML = h;
 }
 
+//New Addition
+var currentSubFolderParentId = null;
+var currentSubFolderParentName = null;
+
+function openCreateSubFolder(parentId, parentName) {
+  currentSubFolderParentId = parentId;
+  currentSubFolderParentName = parentName;
+  document.getElementById('fmod').classList.add('show');
+  document.getElementById('fni').value = '';
+  // Update modal title
+  document.querySelector('#fmod .mh h3').textContent =
+    '📂 New Sub-folder in "' + parentName + '"';
+  setTimeout(function(){ document.getElementById('fni').focus(); }, 50);
+}
+
+// Update existing createFolder function:
+async function createFolder() {
+  var name = document.getElementById('fni').value.trim();
+  if (!name) { toast('Enter folder name', 'error'); return; }
+  var body = {folderName: name};
+  if (currentSubFolderParentId) body.parentId = currentSubFolderParentId;
+
+  var r = await fetch('/api/folders', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+  var d = await r.json();
+  if (d.error) { toast(d.error, 'error'); return; }
+
+  closeFolderModal();
+  toast('Folder created!', 'success');
+  currentSubFolderParentId = null;
+  currentSubFolderParentName = null;
+  document.querySelector('#fmod .mh h3').textContent = '📂 New Folder';
+  await loadFolders();
+
+  // Reload current view if we're in the parent folder
+  if (ST.view === 'folder' && ST.id === (body.parentId || null)) {
+    await refresh();
+  }
+}
+
+
+async function openFolderByExt(fid, fname, ext) {
+  var bc = [{label:'Home',fn:'showHome'},{label:fname,fn:'function(){openFolder(' + fid + ',\'' + fname + '\')}'},{label:'.' + ext.toLowerCase()}];
+  setNav('folder-ext', fid, '📂 ' + fname + ' › .' + ext.toLowerCase(), bc);
+  var r = await fetch('/api/files/folder/' + fid + '/ext/' + ext);
+  renderGrid(await r.json(), '.' + ext.toLowerCase() + ' files in ' + fname);
+}
+
+var allFoldersFlatCache = null;
+async function getAllFoldersFlat() {
+  var r = await fetch('/api/folders/flat');
+  if (!r.ok) return [];
+  return await r.json();
+}
 async function delFolder(fid, e) {
   e.stopPropagation();
   if (!confirm('Delete folder? Files move to root.')) return;
@@ -412,6 +668,20 @@ function fileCard(f, isShared) {
   if (canP) h += '<button class="ob" onclick="prevFile(' + f.fileId + ',\'' +
     esc(f.fileName) + '\',\'' + (f.fileType||'') + '\',' + !!isShared + ')">👁 View</button>';
   h += '<a href="/api/files/download/' + f.fileId + '" class="ob" onclick="event.stopPropagation()">⬇</a>';
+
+  // Agar indexable file hai to index button add karo
+  var indexable = (f.fileType && (f.fileType.includes('pdf') || f.fileType.includes('text'))) ||
+    ['.txt','.md','.pdf','.py','.java','.js','.json','.xml','.yaml','.yml',
+     '.html','.css','.sql','.kt','.ts','.sh'].some(function(e) {
+       return f.fileName.toLowerCase().endsWith(e);
+     });
+  if (!isShared && indexable) {
+    h += '<button id="idx_' + f.fileId + '" class="ob" title="Index for AI search" ' +
+      'onclick="indexCurrentFile(' + f.fileId + ')">⚡</button>';
+  }
+
+
+
   if (!isShared) {
     h += '<button class="ob" style="background:rgba(99,102,241,.85);color:#fff" ' +
       'onclick="openShareModal(' + f.fileId + ',\'' + esc(f.fileName) + '\',event)">🔗</button>';
@@ -420,7 +690,14 @@ function fileCard(f, isShared) {
   h += '</div></div><div class="fb">';
   h += '<div class="fn" title="' + esc(f.fileName) + '">' + esc(f.fileName) + '</div>';
   h += '<div class="fs2">' + f.fileSize + '</div>';
-  h += '<div class="fd">' + fmtDate(f.uploadedAt) + '</div>';
+  h += '<div class="fd">' + fmtDate(f.uploadedAt) +
+  // fb div mein, fd ke baad:
+  if (f.genre) {
+    h += '<div style="font-size:.65rem;color:var(--bl);margin-top:2px;' +
+      'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
+      '🏷️ ' + esc(f.genre) + (f.genreSub ? ' › ' + esc(f.genreSub) : '') + '</div>';
+  }'</div>';
+
   h += '</div></div>';
   return h;
 }
