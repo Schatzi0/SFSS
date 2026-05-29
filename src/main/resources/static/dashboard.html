@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>SFSS</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
     <style>
-        :root{--bg:#f1f5f9;--sb:#0f172a;--nav:#020617;--w:#fff;--bd:#e2e8f0;--tx:#0f172a;--mu:#64748b;--li:#94a3b8;--bl:#6366f1;--gr:#10b981;--rd:#ef4444;--r:12px;}
+        :root{--bg:#f1f5f9;--sb:#0f172a;--nav:#020617;--bd:#e2e8f0;--tx:#0f172a;--mu:#64748b;--li:#94a3b8;--bl:#6366f1;--gr:#10b981;--rd:#ef4444;--r:12px;}
         *{box-sizing:border-box;margin:0;padding:0;}
         body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);height:100vh;display:flex;flex-direction:column;color:var(--tx);overflow:hidden;}
         .nav{background:var(--nav);height:56px;padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.4);z-index:50;}
@@ -25,10 +25,9 @@
         .ni:hover{background:#1e293b;color:#e2e8f0;}.ni.act{background:var(--bl);color:#fff;font-weight:600;}
         .ni .ico{font-size:.95rem;flex-shrink:0;width:18px;text-align:center;}
         .ni .lbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-        .ni .cnt{background:rgba(255,255,255,.13);font-size:.68rem;padding:1px 7px;border-radius:99px;}
-        .ni .del,.ni .lock-btn{opacity:0;font-size:.72rem;cursor:pointer;padding:2px 5px;border-radius:4px;}
-        .ni .del{color:#f87171;}.ni .lock-btn{color:#a5b4fc;}
-        .ni:hover .del,.ni:hover .lock-btn{opacity:1;}
+        .ni .cnt{background:rgba(255,255,255,.13);font-size:.68rem;padding:1px 7px;border-radius:99px;flex-shrink:0;}
+        .nbtn{opacity:0;font-size:.7rem;cursor:pointer;padding:2px 5px;border-radius:4px;background:none;border:none;flex-shrink:0;}
+        .ni:hover .nbtn{opacity:1;}.ndel{color:#f87171!important;}.nlock{color:#a5b4fc!important;}
         .sbdiv{height:1px;background:rgba(255,255,255,.06);margin:.4rem .75rem;}
         .sbscroll{flex:1;overflow-y:auto;padding:.25rem .75rem .75rem;}
         .sbscroll::-webkit-scrollbar{width:3px;}.sbscroll::-webkit-scrollbar-thumb{background:#1e293b;border-radius:4px;}
@@ -36,35 +35,37 @@
         .bnf:hover{background:var(--bl);color:#fff;}
         .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
         .tb{padding:.75rem 1.25rem;background:#fff;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:.75rem;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.05);}
-        .tbl{flex:1;min-width:0;}.bc{font-size:.75rem;color:var(--mu);}.bc span{cursor:pointer;}.bc span:hover{color:var(--bl);}.bc .sep{margin:0 .3rem;color:var(--li);}.pt{font-size:1rem;font-weight:700;}
+        .tbl{flex:1;min-width:0;}
+        .bc{font-size:.75rem;color:var(--mu);}.bc span{cursor:pointer;}.bc span:hover{color:var(--bl);}.bcsep{margin:0 .3rem;color:var(--li);cursor:default!important;}
+        .pt{font-size:1rem;font-weight:700;}
         .sw{position:relative;}.sw input{padding:.45rem 1rem .45rem 2.1rem;border:1.5px solid var(--bd);border-radius:10px;font-size:.83rem;width:220px;outline:none;background:var(--bg);transition:.2s;}.sw input:focus{border-color:var(--bl);background:#fff;}
         .si{position:absolute;left:.65rem;top:50%;transform:translateY(-50%);color:var(--li);pointer-events:none;}
-        .bup{padding:.45rem 1.1rem;background:var(--gr);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.4rem;transition:.2s;box-shadow:0 2px 8px rgba(16,185,129,.25);}
-        .bup:hover{background:#059669;transform:translateY(-1px);}
+        .bup{padding:.45rem 1.1rem;background:var(--gr);color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:.83rem;font-weight:600;display:flex;align-items:center;gap:.4rem;transition:.2s;}
+        .bup:hover{background:#059669;}
         .cnt{flex:1;overflow-y:auto;padding:1.25rem;}.cnt::-webkit-scrollbar{width:5px;}.cnt::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px;}
-        .hero{background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 16px rgba(0,0,0,.1);}
+        .hero{background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:var(--r);padding:1.25rem 1.5rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;}
         .hero-l h2{font-size:1.1rem;font-weight:700;color:#f1f5f9;margin-bottom:.2rem;}.hero-l p{font-size:.82rem;color:#64748b;}
         .sbar{background:rgba(255,255,255,.07);border-radius:99px;height:6px;margin-top:.75rem;overflow:hidden;width:200px;}.sfill{height:100%;background:linear-gradient(90deg,var(--bl),#8b5cf6);border-radius:99px;transition:width .8s;}
         .slbl{font-size:.72rem;color:#64748b;margin-top:.3rem;}
         .hero-r .big{font-size:2.2rem;font-weight:900;color:#fff;line-height:1;text-align:right;}.hero-r .sub{font-size:.75rem;color:#475569;text-align:right;}
-        .shd{display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 .6rem;}.shd h3{font-size:.82rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;}.shd a{font-size:.78rem;color:var(--bl);cursor:pointer;}
-        .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:.75rem;margin-bottom:1rem;}
-        .cc{border-radius:var(--r);padding:1.1rem 1rem;cursor:pointer;transition:all .2s;position:relative;overflow:hidden;border:none;}.cc:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.15);}
-        .cc .ci{font-size:1.6rem;margin-bottom:.6rem;}.cc .ck{font-size:1.9rem;font-weight:900;line-height:1;color:#fff;}.cc .cl{font-size:.75rem;color:rgba(255,255,255,.75);margin-top:.25rem;font-weight:500;}
+        .shd{display:flex;align-items:center;justify-content:space-between;margin:.75rem 0 .6rem;}.shd h3{font-size:.82rem;font-weight:700;color:var(--mu);text-transform:uppercase;letter-spacing:.06em;}
+        .cg{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.75rem;margin-bottom:1rem;}
+        .cc{border-radius:var(--r);padding:1.1rem 1rem;cursor:pointer;transition:all .2s;border:none;text-align:left;}.cc:hover{transform:translateY(-3px);box-shadow:0 12px 40px rgba(0,0,0,.15);}
+        .ci{font-size:1.6rem;margin-bottom:.6rem;}.ck{font-size:1.9rem;font-weight:900;line-height:1;color:#fff;}.cl{font-size:.75rem;color:rgba(255,255,255,.75);margin-top:.25rem;font-weight:500;}
         .cp{background:linear-gradient(135deg,#dc2626,#b91c1c);}.ci2{background:linear-gradient(135deg,#7c3aed,#6d28d9);}.cd{background:linear-gradient(135deg,#2563eb,#1d4ed8);}.cs{background:linear-gradient(135deg,#059669,#047857);}.cpt{background:linear-gradient(135deg,#d97706,#b45309);}.ct{background:linear-gradient(135deg,#4f46e5,#4338ca);}.cco{background:linear-gradient(135deg,#ca8a04,#a16207);}.ca{background:linear-gradient(135deg,#475569,#334155);}.cot{background:linear-gradient(135deg,#0891b2,#0e7490);}
         .rl{display:flex;flex-direction:column;gap:.4rem;}
         .ri{background:#fff;border-radius:10px;padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;cursor:pointer;transition:.15s;border:1px solid var(--bd);}.ri:hover{border-color:#c7d2fe;background:#fafbff;}
-        .ri .rii{font-size:1.4rem;flex-shrink:0;}.ri .rin{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.ri .rim{font-size:.72rem;color:var(--mu);}.ri .ric{font-size:.7rem;padding:2px 8px;border-radius:99px;background:#f1f5f9;color:var(--mu);flex-shrink:0;}
+        .rii{font-size:1.4rem;flex-shrink:0;}.rin{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.rim{font-size:.72rem;color:var(--mu);}.ric{font-size:.7rem;padding:2px 8px;border-radius:99px;background:#f1f5f9;color:var(--mu);flex-shrink:0;}
         .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.7rem;}
-        .sc{background:#fff;border-radius:var(--r);padding:1rem;cursor:pointer;transition:.2s;border:1.5px solid var(--bd);text-align:center;}.sc:hover{border-color:var(--bl);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1);}
-        .sc .sci{font-size:1.8rem;margin-bottom:.5rem;}.sc .scn{font-size:1.5rem;font-weight:800;}.sc .scl{font-size:.72rem;color:var(--mu);margin-top:.2rem;font-weight:500;}
+        .sc{background:#fff;border-radius:var(--r);padding:1rem;cursor:pointer;transition:.2s;border:1.5px solid var(--bd);text-align:center;}.sc:hover{border-color:var(--bl);transform:translateY(-2px);}
+        .sci{font-size:1.8rem;margin-bottom:.5rem;}.scn{font-size:1.5rem;font-weight:800;}.scl{font-size:.72rem;color:var(--mu);margin-top:.2rem;}
         .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.75rem;}
-        .fc{background:#fff;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--bd);transition:.2s;position:relative;}.fc:hover{transform:translateY(-3px);box-shadow:0 4px 16px rgba(0,0,0,.1);border-color:#c7d2fe;}
-        .ft{height:100px;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;}.ft img{width:100%;height:100%;object-fit:cover;transition:.3s;}.fc:hover .ft img{transform:scale(1.05);}.ft .ti{font-size:2.5rem;}
-        .fov{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;gap:.5rem;}.fc:hover .fov{opacity:1;}
-        .ob{background:rgba(255,255,255,.9);color:#1e293b;border:none;padding:.3rem .6rem;border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:700;text-decoration:none;}.obd{background:rgba(239,68,68,.85);color:#fff;}
-        .fb{padding:.6rem .7rem .7rem;}.fn{font-size:.77rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.fs2{font-size:.7rem;color:var(--mu);}.fd{font-size:.68rem;color:var(--li);}
-        .empty{text-align:center;padding:4rem 2rem;color:var(--mu);grid-column:1/-1;}
+        .fc{background:#fff;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--bd);transition:.2s;}.fc:hover{transform:translateY(-3px);box-shadow:0 4px 16px rgba(0,0,0,.1);border-color:#c7d2fe;}
+        .ft{height:100px;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden;}.ft img{width:100%;height:100%;object-fit:cover;}.ft .ti{font-size:2.5rem;}
+        .fov{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;gap:.35rem;flex-wrap:wrap;padding:.3rem;}.fc:hover .fov{opacity:1;}
+        .ob{background:rgba(255,255,255,.9);color:#1e293b;border:none;padding:.28rem .5rem;border-radius:6px;cursor:pointer;font-size:.68rem;font-weight:700;text-decoration:none;white-space:nowrap;}.ob:hover{background:#fff;}
+        .fb{padding:.6rem .7rem .7rem;}.fn{font-size:.77rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}.fs2{font-size:.7rem;color:var(--mu);}.fd{font-size:.68rem;color:var(--li);}.gbadge{font-size:.65rem;color:var(--bl);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .empty{text-align:center;padding:4rem 2rem;color:var(--mu);}
         .ov{display:none;position:fixed;inset:0;background:rgba(2,6,23,.7);backdrop-filter:blur(6px);z-index:200;align-items:center;justify-content:center;}.ov.show{display:flex;}
         .modal{background:#fff;border-radius:16px;padding:1.5rem;box-shadow:0 25px 60px rgba(0,0,0,.3);animation:su .2s ease;max-width:95vw;}
         @keyframes su{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -73,7 +74,6 @@
         .mfg{margin-bottom:.85rem;}.mfl{font-size:.8rem;font-weight:600;color:#475569;display:block;margin-bottom:.35rem;}
         .mfi,.mfs{width:100%;padding:.55rem .85rem;border:1.5px solid var(--bd);border-radius:8px;font-size:.88rem;outline:none;transition:.2s;background:#fff;}.mfi:focus,.mfs:focus{border-color:var(--bl);}
         .dz{border:2px dashed #c7d2fe;border-radius:10px;padding:1.5rem;text-align:center;cursor:pointer;transition:.2s;margin-bottom:.85rem;background:#f8f8ff;}.dz:hover{border-color:var(--bl);background:#eef2ff;}
-        .dz .di{font-size:1.75rem;color:var(--bl);margin-bottom:.4rem;}.dz .dt{font-size:.83rem;font-weight:600;color:var(--bl);}.dz .ds{font-size:.72rem;color:var(--mu);margin-top:.2rem;}.dz input{display:none;}
         .mft{display:flex;gap:.65rem;justify-content:flex-end;margin-top:1.1rem;}
         .bc2{padding:.5rem 1rem;border:1.5px solid var(--bd);background:#fff;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;color:#475569;}
         .bp{padding:.5rem 1.1rem;background:var(--bl);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:700;}.bp:hover{background:#4f46e5;}
@@ -81,21 +81,27 @@
         .ph{padding:.8rem 1.1rem;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:space-between;}
         .phl{display:flex;align-items:center;gap:.6rem;}.ph h3{font-size:.87rem;font-family:monospace;}
         .plb{font-size:.68rem;padding:2px 8px;border-radius:99px;background:rgba(99,102,241,.25);color:#a5b4fc;font-weight:600;}
-        .pb{max-height:82vh;overflow:auto;background:#0f172a;}.pb::-webkit-scrollbar{width:6px;}.pb::-webkit-scrollbar-thumb{background:#334155;border-radius:4px;}
+        .pb{max-height:82vh;overflow:auto;background:#0f172a;}
         .cv table{border-collapse:collapse;width:100%;font-family:Consolas,monospace;font-size:.8rem;}
         .cv .ln{width:52px;text-align:right;padding:0 14px 0 8px;color:#334155;user-select:none;border-right:1px solid #1e293b;background:#0a0f1a;line-height:1.6;}
         .cv .lc{padding:0 16px;white-space:pre;background:#0f172a;line-height:1.6;}.cv tr:hover .ln,.cv tr:hover .lc{background:#1e293b;}
-        /* PIN modal styles */
         .pin-dots{display:flex;justify-content:center;gap:.75rem;margin:1.25rem 0;}
-        .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);background:transparent;transition:.2s;}
-        .pin-dot.filled{background:var(--bl);border-color:var(--bl);}
+        .pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--bd);background:transparent;transition:.2s;}.pin-dot.filled{background:var(--bl);border-color:var(--bl);}
         .pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.75rem;}
-        .pin-key{padding:.75rem;background:var(--bg);border:1.5px solid var(--bd);border-radius:10px;font-size:1.1rem;font-weight:600;cursor:pointer;text-align:center;transition:.15s;}
-        .pin-key:hover{background:var(--bl);color:#fff;border-color:var(--bl);}
-        .pin-key.del-key{color:var(--rd);}
-        .lock-badge{display:inline-block;background:rgba(239,68,68,.15);color:#f87171;font-size:.65rem;padding:1px 5px;border-radius:4px;margin-left:.3rem;}
-        .toast{position:fixed;bottom:1.5rem;right:1.5rem;padding:.75rem 1.1rem;border-radius:10px;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(6px);transition:.3s;pointer-events:none;box-shadow:0 10px 30px rgba(0,0,0,.2);}
-        .toast.show{opacity:1;transform:translateY(0);}.toast.success{background:var(--gr);}.toast.error{background:var(--rd);}.toast.info{background:var(--bl);}
+        .pin-key{padding:.75rem;background:var(--bg);border:1.5px solid var(--bd);border-radius:10px;font-size:1.1rem;font-weight:600;cursor:pointer;text-align:center;transition:.15s;}.pin-key:hover{background:var(--bl);color:#fff;border-color:var(--bl);}
+        .lkbadge{display:inline-block;background:rgba(239,68,68,.15);color:#f87171;font-size:.6rem;padding:1px 4px;border-radius:3px;margin-left:3px;}
+        .rag-msg{display:flex;margin-bottom:.35rem;}.rag-user{justify-content:flex-end;}.rag-bot{justify-content:flex-start;}
+        .rag-bub{max-width:88%;padding:.6rem .85rem;border-radius:12px;font-size:.82rem;line-height:1.5;}
+        .rag-bub-u{background:#6366f1;color:#fff;border-radius:12px 12px 2px 12px;}
+        .rag-bub-a{background:#fff;color:#1e293b;border:1px solid #e2e8f0;border-radius:12px 12px 12px 2px;}
+        .rag-bub-e{background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:12px;font-size:.78rem;}
+        .rag-src-wrap{margin-top:.4rem;font-size:.7rem;color:#94a3b8;}
+        .rag-src{background:#f1f5f9;color:#475569;padding:1px 7px;border-radius:99px;margin-right:.25rem;display:inline-block;}
+        .dot{animation:blink 1.2s infinite;font-size:.5rem;margin-right:3px;color:#94a3b8;}
+        .dot:nth-child(2){animation-delay:.3s;}.dot:nth-child(3){animation-delay:.6s;}
+        @keyframes blink{0%,100%{opacity:.3}50%{opacity:1}}
+        .toast{position:fixed;bottom:1.5rem;right:5.5rem;padding:.75rem 1.1rem;border-radius:10px;color:#fff;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(6px);transition:.3s;pointer-events:none;}
+        .toast.show{opacity:1;transform:translateY(0);}.toast.ts{background:var(--gr);}.toast.te{background:var(--rd);}.toast.ti{background:var(--bl);}
     </style>
 </head>
 <body>
@@ -104,7 +110,7 @@
     <div class="brand">📁 SF<b>SS</b></div>
     <div class="nav-r">
         <div class="upill"><div class="av" id="av">?</div><span id="un">...</span></div>
-        <button class="bout" onclick="logout()">Sign Out</button>
+        <button class="bout" onclick="doLogout()">Sign Out</button>
     </div>
 </nav>
 
@@ -112,19 +118,21 @@
     <div class="sb">
         <div class="sb-top">
             <div class="sbl">Navigation</div>
-            <div class="ni act" id="navHome" onclick="goHome()">
-                <span class="ico">🏠</span><span class="lbl">Overview</span>
+            <div class="ni act" id="navHome" onclick="showHome()">
+                <span class="ico">&#127968;</span><span class="lbl">Overview</span>
             </div>
             <div class="ni" id="navShared" onclick="showSharedWithMe()">
-                <span class="ico">🤝</span><span class="lbl">Shared with Me</span>
+                <span class="ico">&#129309;</span><span class="lbl">Shared with Me</span>
             </div>
         </div>
         <div class="sbdiv"></div>
         <div class="sb-top" style="padding:.5rem .75rem .25rem">
             <div class="sbl">Folders</div>
-            <button class="bnf" onclick="openFolderModal()">+ New Folder</button>
+            <button class="bnf" onclick="openFolderModal(null)">+ New Folder</button>
         </div>
-        <div class="sbscroll" id="sbf"></div>
+        <div class="sbscroll" id="sbf">
+            <div style="font-size:.73rem;color:#475569;text-align:center;padding:.75rem">Loading...</div>
+        </div>
     </div>
 
     <div class="main">
@@ -134,26 +142,30 @@
                 <div class="pt" id="pt">Overview</div>
             </div>
             <div class="sw">
-                <span class="si">🔍</span>
-                <input type="text" placeholder="Search files..." id="si" oninput="handleSearch(this.value)"/>
+                <span class="si">&#128269;</span>
+                <input type="text" id="si" placeholder="Search files..." oninput="handleSearch(this.value)"/>
             </div>
-            <button class="bup" onclick="openUpload()">⬆️ Upload</button>
+            <button class="bup" onclick="openUpload()">&#8679; Upload</button>
         </div>
-        <div class="cnt" id="content"></div>
+        <div class="cnt" id="content">
+            <div style="padding:3rem;text-align:center;color:var(--mu)">Loading...</div>
+        </div>
     </div>
 </div>
 
 <!-- FOLDER MODAL -->
 <div class="ov" id="fmod">
     <div class="modal" style="width:400px">
-        <div class="mh"><h3>📂 New Folder</h3><button class="mcl" onclick="closeFolderModal()">✕</button></div>
+        <div class="mh"><h3 id="fmodTitle">New Folder</h3>
+            <button class="mcl" onclick="closeFolderModal()">&#10005;</button></div>
         <div class="mfg">
             <label class="mfl">Folder Name</label>
-            <input type="text" class="mfi" id="fni" placeholder="e.g. Work Documents" onkeydown="if(event.key==='Enter')createFolder()"/>
+            <input class="mfi" id="fni" placeholder="e.g. Work Documents"
+                   onkeydown="if(event.key==='Enter')doCreateFolder()"/>
         </div>
         <div class="mft">
             <button class="bc2" onclick="closeFolderModal()">Cancel</button>
-            <button class="bp" onclick="createFolder()">Create</button>
+            <button class="bp" onclick="doCreateFolder()">Create</button>
         </div>
     </div>
 </div>
@@ -161,16 +173,18 @@
 <!-- UPLOAD MODAL -->
 <div class="ov" id="umod">
     <div class="modal" style="width:450px">
-        <div class="mh"><h3>⬆️ Upload Files</h3><button class="mcl" onclick="closeUpload()">✕</button></div>
-        <div class="dz" id="dz" onclick="document.getElementById('ufi').click()">
-            <div class="di">📎</div>
-            <div class="dt" id="dtxt">Click or drag files here</div>
-            <div class="ds">PDF, Images, Excel, Word, Code and more</div>
-            <input type="file" id="ufi" multiple onchange="onFilePick(this)"/>
+        <div class="mh"><h3>Upload Files</h3>
+            <button class="mcl" onclick="closeUpload()">&#10005;</button></div>
+        <div class="dz" onclick="document.getElementById('ufi').click()"
+             ondragover="event.preventDefault()" ondrop="onDrop(event)">
+            <div style="font-size:1.75rem;color:var(--bl);margin-bottom:.4rem">&#128206;</div>
+            <div style="font-size:.83rem;font-weight:600;color:var(--bl)" id="dtxt">Click or drag files here</div>
+            <div style="font-size:.72rem;color:var(--mu);margin-top:.2rem">PDF, Images, Excel, Word, Code (max 50MB)</div>
+            <input type="file" id="ufi" multiple style="display:none" onchange="onFilePick(this)"/>
         </div>
         <div class="mfg">
-            <label class="mfl">Override Folder <span style="color:var(--li);font-weight:400">(empty = auto)</span></label>
-            <select class="mfs" id="fsel"><option value="">🤖 Auto-detect by file type</option></select>
+            <label class="mfl">Folder <span style="color:var(--li);font-weight:400">(empty = auto)</span></label>
+            <select class="mfs" id="fsel"><option value="">Auto-detect by file type</option></select>
         </div>
         <div class="mft">
             <button class="bc2" onclick="closeUpload()">Cancel</button>
@@ -189,8 +203,8 @@
                 <span class="plb" id="plang" style="display:none"></span>
             </div>
             <div style="display:flex;gap:.5rem;align-items:center">
-                <a id="pdl" href="#" style="font-size:.78rem;color:#94a3b8;text-decoration:none">⬇ Download</a>
-                <button class="mcl" style="color:#94a3b8" onclick="closePrev()">✕</button>
+                <a id="pdl" href="#" style="font-size:.78rem;color:#94a3b8;text-decoration:none">Download</a>
+                <button class="mcl" style="color:#94a3b8" onclick="closePrev()">&#10005;</button>
             </div>
         </div>
         <div class="pb" id="pbody"></div>
@@ -199,44 +213,42 @@
 
 <!-- SHARE MODAL -->
 <div class="ov" id="shareModal">
-    <div class="modal" style="width:460px">
-        <div class="mh"><h3>🔗 Share File</h3><button class="mcl" onclick="document.getElementById('shareModal').classList.remove('show')">✕</button></div>
+    <div class="modal" style="width:450px">
+        <div class="mh"><h3>Share File</h3>
+            <button class="mcl" onclick="closeShareModal()">&#10005;</button></div>
         <div style="font-size:.82rem;color:var(--mu);margin-bottom:1rem;font-weight:600" id="shareFileName"></div>
         <div class="mfg">
             <label class="mfl">Share with (Email)</label>
-            <input type="email" class="mfi" id="shareEmail" placeholder="user@example.com" onkeydown="if(event.key==='Enter')doShare()"/>
+            <input type="email" class="mfi" id="shareEmail" placeholder="user@example.com"
+                   onkeydown="if(event.key==='Enter')doShare()"/>
         </div>
         <div class="mfg">
             <label class="mfl">Permission</label>
             <select class="mfs" id="sharePerm">
-                <option value="view">👁 View only</option>
-                <option value="download">⬇ View & Download</option>
+                <option value="view">View only</option>
+                <option value="download">View and Download</option>
             </select>
         </div>
-        <div id="shareResult" style="font-size:.82rem;margin-bottom:.75rem;min-height:20px"></div>
+        <div id="shareResult" style="font-size:.82rem;margin-bottom:.5rem;min-height:18px"></div>
         <div id="shareList" style="margin-bottom:1rem"></div>
         <div class="mft">
-            <button class="bc2" onclick="document.getElementById('shareModal').classList.remove('show')">Close</button>
+            <button class="bc2" onclick="closeShareModal()">Close</button>
             <button class="bp" onclick="doShare()">Share</button>
         </div>
     </div>
 </div>
 
-<!-- PIN VERIFY MODAL -->
+<!-- PIN MODAL -->
 <div class="ov" id="pinModal">
-    <div class="modal" style="width:340px;text-align:center">
-        <div class="mh" style="justify-content:center;border-bottom:1px solid var(--bd);padding-bottom:.75rem;margin-bottom:0">
-            <div>
-                <div style="font-size:1.5rem;margin-bottom:.25rem">🔒</div>
-                <h3 id="pinFolderName" style="font-size:.95rem"></h3>
-                <div style="font-size:.78rem;color:var(--mu);margin-top:.2rem">Enter PIN to unlock</div>
-            </div>
+    <div class="modal" style="width:310px;text-align:center">
+        <div style="padding:.75rem 0;border-bottom:1px solid var(--bd);margin-bottom:0">
+            <div style="font-size:1.5rem;margin-bottom:.25rem">&#128274;</div>
+            <div style="font-weight:700" id="pinFolderName"></div>
+            <div style="font-size:.78rem;color:var(--mu);margin-top:.2rem">Enter PIN to unlock</div>
         </div>
         <div class="pin-dots" id="pinDots">
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
-            <div class="pin-dot"></div>
+            <div class="pin-dot"></div><div class="pin-dot"></div>
+            <div class="pin-dot"></div><div class="pin-dot"></div>
         </div>
         <div id="pinError" style="font-size:.78rem;color:var(--rd);min-height:18px;margin-bottom:.5rem"></div>
         <div class="pin-keypad">
@@ -249,9 +261,9 @@
             <button class="pin-key" onclick="pinKey('7')">7</button>
             <button class="pin-key" onclick="pinKey('8')">8</button>
             <button class="pin-key" onclick="pinKey('9')">9</button>
-            <button class="pin-key" onclick="pinKey('C')" style="color:var(--mu)">C</button>
+            <button class="pin-key" onclick="pinKey('C')" style="font-size:.8rem;color:var(--mu)">CLR</button>
             <button class="pin-key" onclick="pinKey('0')">0</button>
-            <button class="pin-key del-key" onclick="pinKey('DEL')">⌫</button>
+            <button class="pin-key" onclick="pinKey('DEL')" style="color:var(--rd)">&#9003;</button>
         </div>
         <button class="bc2" style="width:100%;margin-top:.25rem" onclick="closePinModal()">Cancel</button>
     </div>
@@ -259,81 +271,55 @@
 
 <!-- SET PIN MODAL -->
 <div class="ov" id="setPinModal">
-    <div class="modal" style="width:380px">
+    <div class="modal" style="width:370px">
         <div class="mh">
-            <h3 id="setPinTitle">🔒 Protect Folder</h3>
-            <button class="mcl" onclick="document.getElementById('setPinModal').classList.remove('show')">✕</button>
+            <h3 id="setPinTitle">Protect Folder</h3>
+            <button class="mcl" onclick="closeSetPinModal()">&#10005;</button>
         </div>
-        <div id="setPinBody">
-            <div class="mfg">
-                <label class="mfl">Set PIN (min 4 digits)</label>
-                <input type="password" class="mfi" id="newPinInput" placeholder="Enter PIN" maxlength="8"/>
-            </div>
-            <div class="mfg">
-                <label class="mfl">Confirm PIN</label>
-                <input type="password" class="mfi" id="confirmPinInput" placeholder="Confirm PIN" maxlength="8" onkeydown="if(event.key==='Enter')savePin()"/>
-            </div>
-            <div id="setPinError" style="font-size:.78rem;color:var(--rd);min-height:18px"></div>
-        </div>
+        <div id="setPinBody"></div>
         <div class="mft">
-            <button class="bc2" onclick="document.getElementById('setPinModal').classList.remove('show')">Cancel</button>
-            <button class="bp" id="savePinBtn" onclick="savePin()">Set PIN</button>
+            <button class="bc2" onclick="closeSetPinModal()">Cancel</button>
+            <button class="bp" id="savePinBtn" onclick="doSavePin()">Set PIN</button>
         </div>
     </div>
 </div>
 
-<div class="toast" id="toast"></div>
-
-<script src="/js/dashboard.js"></script>
-
-<!-- RAG CHAT PANEL -->
-<div id="ragPanel" style="display:none;position:fixed;bottom:5rem;right:1.5rem;
-     width:380px;height:520px;background:#fff;border-radius:16px;
-     box-shadow:0 20px 60px rgba(0,0,0,.2);z-index:150;flex-direction:column;overflow:hidden;
-     border:1.5px solid var(--bd);">
-    <!-- Header -->
-    <div style="background:#0f172a;padding:.9rem 1rem;display:flex;align-items:center;
-              justify-content:space-between;flex-shrink:0">
+<!-- RAG PANEL -->
+<div id="ragPanel" style="display:none;position:fixed;bottom:5.5rem;right:1.5rem;width:370px;height:500px;
+     background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);z-index:150;
+     flex-direction:column;overflow:hidden;border:1.5px solid var(--bd);">
+    <div style="background:#0f172a;padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
         <div style="display:flex;align-items:center;gap:.6rem">
-            <span style="font-size:1.1rem">🤖</span>
+            <span style="font-size:1.1rem">&#129302;</span>
             <div>
                 <div style="color:#f1f5f9;font-weight:700;font-size:.9rem">Ask AI</div>
-                <div style="color:#64748b;font-size:.7rem" id="ragStatusText">Loading...</div>
+                <div style="color:#64748b;font-size:.7rem" id="ragStatus">Checking...</div>
             </div>
         </div>
         <div style="display:flex;gap:.5rem;align-items:center">
-            <button id="ragIndexAllBtn" onclick="indexAllFiles()"
-                    style="padding:.3rem .65rem;background:rgba(99,102,241,.2);color:#a5b4fc;
-                     border:1px solid rgba(99,102,241,.3);border-radius:6px;cursor:pointer;
-                     font-size:.72rem;font-weight:600">⚡ Index All</button>
-            <button onclick="clearRagChat()"
-                    style="background:none;border:none;color:#64748b;cursor:pointer;font-size:.85rem"
-                    title="Clear chat">🗑</button>
-            <button onclick="toggleRag()"
-                    style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem">✕</button>
+            <button onclick="ragIndexAll()" id="ragIdxBtn"
+                    style="padding:.3rem .65rem;background:rgba(99,102,241,.2);color:#a5b4fc;border:1px solid rgba(99,102,241,.3);border-radius:6px;cursor:pointer;font-size:.72rem;font-weight:600">
+                &#9889; Index All</button>
+            <button onclick="ragClear()" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:.85rem">&#128465;</button>
+            <button onclick="toggleRag()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1rem">&#10005;</button>
         </div>
     </div>
-    <!-- Messages -->
-    <div id="ragMessages" style="flex:1;overflow-y:auto;padding:.75rem;display:flex;
-                               flex-direction:column;gap:.5rem;background:#f8fafc">
-        <div class="rag-welcome" style="text-align:center;color:#94a3b8;font-size:.83rem;
-         padding:2rem 1rem">👋 Ask me anything about your files!<br>
-            <span style="font-size:.75rem;color:#cbd5e1">First index your files using ⚡ Index All</span>
+    <div id="ragMsgs" style="flex:1;overflow-y:auto;padding:.75rem;display:flex;flex-direction:column;gap:.35rem;background:#f8fafc">
+        <div id="ragWelcome" style="text-align:center;color:#94a3b8;font-size:.83rem;padding:2rem 1rem">
+            Ask me anything about your files!<br>
+            <span style="font-size:.75rem;color:#cbd5e1">Click Index All first to enable AI</span>
         </div>
     </div>
-    <!-- Input -->
     <div style="padding:.75rem;background:#fff;border-top:1px solid var(--bd);display:flex;gap:.5rem">
-        <input id="ragInput" type="text" placeholder="Ask about your files..."
-               style="flex:1;padding:.55rem .85rem;border:1.5px solid var(--bd);border-radius:10px;
-                  font-size:.83rem;outline:none" onfocus="this.style.borderColor='#6366f1'"
-               onblur="this.style.borderColor='#e2e8f0'"/>
-        <button id="ragSendBtn" onclick="sendRagMessage()"
-                style="padding:.55rem .9rem;background:#6366f1;color:#fff;border:none;
-                   border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:700">→</button>
+        <input id="ragInp" type="text" placeholder="Ask about your files..."
+               style="flex:1;padding:.55rem .85rem;border:1.5px solid var(--bd);border-radius:10px;font-size:.83rem;outline:none"
+               onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#e2e8f0'"
+               onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();ragSend();}"/>
+        <button onclick="ragSend()"
+                style="padding:.55rem .9rem;background:#6366f1;color:#fff;border:none;border-radius:10px;cursor:pointer;font-size:.9rem;font-weight:700">&#8594;</button>
     </div>
 </div>
 
-<!-- RAG Float Button -->
 <button onclick="toggleRag()"
         style="position:fixed;bottom:1.5rem;right:1.5rem;width:52px;height:52px;
                background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none;
@@ -341,30 +327,1093 @@
                box-shadow:0 4px 16px rgba(99,102,241,.4);transition:all .2s"
         onmouseover="this.style.transform='scale(1.1)'"
         onmouseout="this.style.transform='scale(1)'"
-        title="Ask AI about your files">🤖</button>
+        title="Ask AI about your files">&#129302;</button>
 
-<style>
-    .rag-msg { display:flex; margin-bottom:.25rem; }
-    .rag-user { justify-content:flex-end; }
-    .rag-assistant,.rag-error,.rag-thinking { justify-content:flex-start; }
-    .rag-bubble { max-width:88%; padding:.6rem .85rem; border-radius:12px;
-                  font-size:.82rem; line-height:1.5; }
-    .user-bubble { background:#6366f1; color:#fff; border-radius:12px 12px 2px 12px; }
-    .ai-bubble { background:#fff; color:#1e293b; border:1px solid #e2e8f0;
-                 border-radius:12px 12px 12px 2px; }
-    .error-bubble { background:#fef2f2; color:#dc2626; border:1px solid #fecaca;
-                    border-radius:12px; font-size:.78rem; }
-    .rag-sources { margin-top:.4rem; font-size:.7rem; color:#94a3b8; }
-    .rag-src { background:#f1f5f9; color:#475569; padding:1px 7px; border-radius:99px;
-               margin-right:.25rem; display:inline-block; }
-    .thinking-bubble .dot { animation:blink 1.2s infinite; font-size:.5rem;
-                            margin-right:3px; color:#94a3b8; }
-    .thinking-bubble .dot:nth-child(2) { animation-delay:.3s; }
-    .thinking-bubble .dot:nth-child(3) { animation-delay:.6s; }
-    @keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
-</style>
+<div class="toast" id="toast"></div>
 
-<script src="/js/rag.js"></script>
+<script>
+    // ============================================================
+    // SFSS Dashboard — All JS Inline
+    // ============================================================
 
+    // ── STATE ────────────────────────────────────────────
+    var ST          = {view:'home', id:null, label:'Overview'};
+    var folders     = [];
+    var flatFolders = [];
+    var unlockedMap = {};
+    var shareFileId = null;
+    var pinFolderId = null;
+    var pinFolderName = null;
+    var pinValue    = '';
+    var setPinId    = null;
+    var setPinRemove= false;
+    var subParentId = null;
+    var sTimer      = null;
+    var ragOpen     = false;
+    var ragHistory  = [];
+
+    var CATS = [
+      {key:'PDFs',          icon:'&#128213;', cls:'cp',  label:'PDFs'},
+      {key:'Images',        icon:'&#128444;', cls:'ci2', label:'Images'},
+      {key:'Documents',     icon:'&#128221;', cls:'cd',  label:'Documents'},
+      {key:'Spreadsheets',  icon:'&#128202;', cls:'cs',  label:'Spreadsheets'},
+      {key:'Presentations', icon:'&#128209;', cls:'cpt', label:'Presentations'},
+      {key:'Text Files',    icon:'&#128196;', cls:'ct',  label:'Text Files'},
+      {key:'Code',          icon:'&#128187;', cls:'cco', label:'Code'},
+      {key:'Archives',      icon:'&#128476;', cls:'ca',  label:'Archives'},
+      {key:'Others',        icon:'&#128230;', cls:'cot', label:'Others'}
+    ];
+
+    var CODE_ICONS = {};
+    CODE_ICONS['Code \u203a Java']            = 'Java';
+    CODE_ICONS['Code \u203a Python']          = 'Python';
+    CODE_ICONS['Code \u203a JavaScript']      = 'JS';
+    CODE_ICONS['Code \u203a Web']             = 'Web';
+    CODE_ICONS['Code \u203a Config']          = 'Config';
+    CODE_ICONS['Code \u203a Systems']         = 'C/Go/Rust';
+    CODE_ICONS['Code \u203a Scripts']         = 'Scripts';
+    CODE_ICONS['Code \u203a SQL']             = 'SQL';
+    CODE_ICONS['Code \u203a Other Languages'] = 'Other';
+
+    var GENRE_COLORS = {
+      'Fiction':       'linear-gradient(135deg,#7c3aed,#6d28d9)',
+      'Academic':      'linear-gradient(135deg,#2563eb,#1d4ed8)',
+      'Philosophy':    'linear-gradient(135deg,#0891b2,#0e7490)',
+      'Professional':  'linear-gradient(135deg,#059669,#047857)',
+      'Personal':      'linear-gradient(135deg,#d97706,#b45309)',
+      'Reference':     'linear-gradient(135deg,#dc2626,#b91c1c)',
+      'Code':          'linear-gradient(135deg,#ca8a04,#a16207)',
+      'Uncategorized': 'linear-gradient(135deg,#475569,#334155)',
+      'Other':         'linear-gradient(135deg,#475569,#334155)'
+    };
+    var GENRE_ICONS = {
+      'Fiction':'&#128218;','Academic':'&#127891;','Philosophy':'&#129300;',
+      'Professional':'&#128188;','Personal':'&#128100;','Reference':'&#128216;',
+      'Code':'&#128187;','Uncategorized':'&#128230;','Other':'&#128230;'
+    };
+    var EXT_COLORS = {
+      'PDF':'#dc2626','DOCX':'#2563eb','DOC':'#2563eb','XLSX':'#059669',
+      'XLS':'#059669','CSV':'#059669','PPTX':'#d97706','JPG':'#7c3aed',
+      'JPEG':'#7c3aed','PNG':'#7c3aed','GIF':'#7c3aed','TXT':'#4f46e5',
+      'JSON':'#ca8a04','JAVA':'#ca8a04','PY':'#4f46e5','JS':'#ca8a04',
+      'TS':'#ca8a04','HTML':'#dc2626','CSS':'#2563eb','SQL':'#0891b2',
+      'MD':'#4f46e5','SH':'#059669','ZIP':'#475569','RAR':'#475569'
+    };
+
+    // ── BOOT ─────────────────────────────────────────────
+    window.onload = function() {
+      bootApp();
+    };
+
+    async function bootApp() {
+      try {
+        var r = await fetch('/api/auth/me');
+        if (!r.ok) { location.href = '/login.html'; return; }
+        var u = await r.json();
+        document.getElementById('un').textContent = u.name || 'User';
+        document.getElementById('av').textContent = (u.name||'U').charAt(0).toUpperCase();
+        await loadFolders();
+        await showHome();
+        setTimeout(ragLoadStatus, 800);
+      } catch(e) {
+        location.href = '/login.html';
+      }
+    }
+
+    // ── FOLDER LOAD ───────────────────────────────────────
+    async function loadFolders() {
+      try {
+        var r = await fetch('/api/folders');
+        if (!r.ok) return;
+        folders = await r.json();
+        flatFolders = flattenTree(folders, 0);
+        renderSB();
+        // Upload dropdown
+        var r2 = await fetch('/api/folders/flat');
+        if (!r2.ok) return;
+        var flat = await r2.json();
+        var sel = document.getElementById('fsel');
+        sel.innerHTML = '<option value="">Auto-detect by file type</option>';
+        for (var i = 0; i < flat.length; i++) {
+          var f = flat[i];
+          var o = document.createElement('option');
+          o.value = f.folderId;
+          o.textContent = (f.parentFolderId ? '  > ' : '') + f.folderName;
+          sel.appendChild(o);
+        }
+      } catch(e) { console.error('loadFolders:', e); }
+    }
+
+    function flattenTree(list, depth) {
+      var res = [];
+      if (!list) return res;
+      for (var i = 0; i < list.length; i++) {
+        var f = list[i];
+        var copy = {
+          folderId: f.folderId, folderName: f.folderName,
+          parentFolderId: f.parentFolderId, fileCount: f.fileCount,
+          isProtected: f.isProtected, _depth: depth
+        };
+        res.push(copy);
+        if (f.subFolders && f.subFolders.length) {
+          var subs = flattenTree(f.subFolders, depth + 1);
+          for (var j = 0; j < subs.length; j++) res.push(subs[j]);
+        }
+      }
+      return res;
+    }
+
+    function renderSB() {
+      document.getElementById('navHome').className   = 'ni' + (ST.view === 'home'   ? ' act' : '');
+      document.getElementById('navShared').className = 'ni' + (ST.view === 'shared' ? ' act' : '');
+      var el = document.getElementById('sbf');
+      if (!flatFolders.length) {
+        el.innerHTML = '<div style="font-size:.73rem;color:#475569;text-align:center;padding:.75rem">No folders yet</div>';
+        return;
+      }
+      var h = '';
+      for (var i = 0; i < flatFolders.length; i++) {
+        var f = flatFolders[i];
+        var act = (ST.view === 'folder' && ST.id === f.folderId) ? ' act' : '';
+        var pl = (.65 + f._depth * .85);
+        var lk = f.isProtected ? '<span class="lkbadge">&#128274;</span>' : '';
+        var prefix = f._depth > 0 ? '&#x2514;' : '';
+        h += '<div class="ni' + act + '" style="padding-left:' + pl + 'rem"' +
+             ' onclick="handleFolderClick(' + f.folderId + ',\'' + esc(f.folderName) + '\',' + (!!f.isProtected) + ')">';
+        h += '<span class="ico">' + prefix + '&#128194;</span>';
+        h += '<span class="lbl">' + esc(f.folderName) + lk + '</span>';
+        h += '<span class="cnt">' + (f.fileCount || 0) + '</span>';
+        h += '<button class="nbtn nlock" onclick="openSetPinModal(' + f.folderId + ',\'' + esc(f.folderName) + '\',' + (!!f.isProtected) + ',event)" title="PIN">&#128273;</button>';
+        h += '<button class="nbtn ndel" onclick="delFolder(' + f.folderId + ',event)" title="Delete">&#10005;</button>';
+        h += '</div>';
+      }
+      el.innerHTML = h;
+    }
+
+    // ── NAVIGATION ────────────────────────────────────────
+    function setNav(view, id, title, bcs) {
+      ST = {view: view, id: id, label: title};
+      document.getElementById('pt').textContent = title;
+      var h = '';
+      for (var i = 0; i < bcs.length; i++) {
+        var b = bcs[i];
+        if (i > 0) h += '<span class="bcsep">&#8250;</span>';
+        if (b.fn) h += '<span onclick="' + b.fn + '">' + esc(b.label) + '</span>';
+        else      h += '<span>' + esc(b.label) + '</span>';
+      }
+      document.getElementById('bc').innerHTML = h;
+      renderSB();
+    }
+
+    async function refresh() {
+      if      (ST.view === 'home')       await showHome();
+      else if (ST.view === 'all')        await showAllFiles();
+      else if (ST.view === 'shared')     await showSharedWithMe();
+      else if (ST.view === 'cat')        await openCat(ST.id, '', ST.label);
+      else if (ST.view === 'code-subs')  await showCodeSubs();
+      else if (ST.view === 'code-sub')   await openCodeSubDirect(ST.id);
+      else if (ST.view === 'others-subs')await showOthersSubs();
+      else if (ST.view === 'others-sub') await openOthersSub(ST.id);
+      else if (ST.view === 'genre')      await openGenre(ST.id);
+      else if (ST.view === 'folder')     { var fn = ST.label.replace('Folder: ',''); await openFolder(ST.id, fn); }
+      else await showHome();
+    }
+
+    // ── HOME ──────────────────────────────────────────────
+    async function showHome() {
+      setNav('home', null, 'Overview', [{label:'Home'}]);
+      var el = document.getElementById('content');
+      el.innerHTML = '<div style="padding:3rem;text-align:center;color:var(--mu)">Loading...</div>';
+      try {
+        var r = await fetch('/api/files/stats');
+        if (!r.ok) throw new Error('Stats failed');
+        var d = await r.json();
+        var cats   = d.categories || {};
+        var total  = d.total || 0;
+        var used   = d.storageUsed || '0 B';
+        var bytes  = d.storageBytes || 0;
+        var pct    = Math.min((bytes / 1073741824) * 100, 100).toFixed(1);
+        var uname  = document.getElementById('un').textContent;
+        var recent = d.recentFiles || [];
+        var h = '';
+        // Hero
+        h += '<div class="hero">';
+        h += '<div class="hero-l"><h2>Welcome, ' + esc(uname) + '!</h2>';
+        h += '<p>Your secure file vault</p>';
+        h += '<div class="sbar"><div class="sfill" style="width:' + pct + '%"></div></div>';
+        h += '<div class="slbl">Used: <strong style="color:#94a3b8">' + used + '</strong></div></div>';
+        h += '<div class="hero-r"><div class="big">' + total + '</div><div class="sub">Files</div></div></div>';
+        // Category tiles
+        h += '<div class="shd"><h3>Browse by Type</h3></div><div class="cg">';
+        for (var i = 0; i < CATS.length; i++) {
+          var c = CATS[i];
+          h += '<div class="cc ' + c.cls + '" onclick="openCat(\'' + c.key + '\',\'' + c.icon + '\',\'' + c.label + '\')">';
+          h += '<div class="ci">' + c.icon + '</div>';
+          h += '<div class="ck">' + (cats[c.key] || 0) + '</div>';
+          h += '<div class="cl">' + c.label + '</div></div>';
+        }
+        h += '</div>';
+        // Genre Library
+        try {
+          var gr = await fetch('/api/rag/genres');
+          if (gr.ok) {
+            var genres = await gr.json();
+            var gmap = {};
+            for (var gi = 0; gi < genres.length; gi++) {
+              var g = genres[gi];
+              if (!g.genre) continue;
+              if (!gmap[g.genre]) gmap[g.genre] = 0;
+              gmap[g.genre] += parseInt(g.count || 0);
+            }
+            var gkeys = Object.keys(gmap);
+            if (gkeys.length) {
+              h += '<div class="shd"><h3>Genre Library</h3><span style="font-size:.75rem;color:var(--mu)">AI-classified</span></div><div class="cg">';
+              for (var gk = 0; gk < gkeys.length; gk++) {
+                var gname = gkeys[gk];
+                var gcnt  = gmap[gname];
+                var gc    = GENRE_COLORS[gname] || GENRE_COLORS['Other'];
+                var gi2   = GENRE_ICONS[gname]  || '&#128230;';
+                h += '<div class="cc" style="background:' + gc + '" onclick="openGenre(\'' + esc(gname) + '\')">';
+                h += '<div class="ci">' + gi2 + '</div>';
+                h += '<div class="ck">' + gcnt + '</div>';
+                h += '<div class="cl">' + esc(gname) + '</div></div>';
+              }
+              h += '</div>';
+            }
+          }
+        } catch(ignored) {}
+        // Recent
+        h += '<div class="shd"><h3>Recent Uploads</h3>' +
+             '<span onclick="showAllFiles()" style="cursor:pointer;font-size:.78rem;color:var(--bl)">View all</span></div>';
+        h += '<div class="rl">';
+        if (recent.length) {
+          for (var ri = 0; ri < recent.length; ri++) {
+            var rf = recent[ri];
+            h += '<div class="ri" onclick="prevFile(' + rf.fileId + ',\'' + esc(rf.fileName) + '\',\'' + (rf.fileType||'') + '\',false)">';
+            h += '<div class="rii">' + fileIcon(rf.fileType, rf.fileName) + '</div>';
+            h += '<div style="flex:1;min-width:0"><div class="rin">' + esc(rf.fileName) + '</div>';
+            h += '<div class="rim">' + rf.fileSize + ' &middot; ' + fmtDate(rf.uploadedAt) + '</div></div>';
+            h += '<div class="ric">' + esc(rf.category || rf.folderName || 'Other') + '</div></div>';
+          }
+        } else {
+          h += '<div style="font-size:.84rem;color:var(--mu);padding:.75rem">No files yet — upload something!</div>';
+        }
+        h += '</div>';
+        el.innerHTML = h;
+      } catch(e) {
+        el.innerHTML = '<div class="empty"><div style="font-size:3rem">&#9888;</div><h3>' + esc(e.message) + '</h3></div>';
+      }
+    }
+
+    async function showAllFiles() {
+      setNav('all', null, 'All Files', [{label:'Home',fn:'showHome()'}]);
+      var r = await fetch('/api/files');
+      renderGrid(r.ok ? await r.json() : [], 'All Files');
+    }
+
+    // ── CATEGORIES ────────────────────────────────────────
+    async function openCat(key, icon, label) {
+      if (key === 'Code')   { await showCodeSubs(); return; }
+      if (key === 'Others') { await showOthersSubs(); return; }
+      setNav('cat', key, label, [{label:'Home',fn:'showHome()'},{label:label}]);
+      var r = await fetch('/api/files/category/' + encodeURIComponent(key));
+      renderGrid(r.ok ? await r.json() : [], label);
+    }
+
+    async function showCodeSubs() {
+      setNav('code-subs', null, 'Code', [{label:'Home',fn:'showHome()'},{label:'Code'}]);
+      var r = await fetch('/api/files/code-subcats');
+      if (!r.ok) return;
+      var data = await r.json();
+      var keys = Object.keys(data);
+      if (!keys.length) { document.getElementById('content').innerHTML = '<div class="empty"><h3>No code files</h3></div>'; return; }
+      var h = '<div class="shd"><h3>Code Sub-categories</h3></div><div class="sg">';
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var v = data[k];
+        var lbl = k.replace('Code \u203a ', '');
+        h += '<div class="sc" onclick="openCodeSubDirect(\'' + esc(k) + '\')">';
+        h += '<div class="sci">&#128187;</div><div class="scn">' + v + '</div>';
+        h += '<div class="scl">' + esc(lbl) + '</div></div>';
+      }
+      h += '</div>';
+      document.getElementById('content').innerHTML = h;
+    }
+
+    async function openCodeSubDirect(cat) {
+      var lbl = cat.replace('Code \u203a ', '');
+      setNav('code-sub', cat, 'Code - ' + lbl,
+        [{label:'Home',fn:'showHome()'},{label:'Code',fn:'showCodeSubs()'},{label:lbl}]);
+      var r = await fetch('/api/files/category/' + encodeURIComponent(cat));
+      renderGrid(r.ok ? await r.json() : [], lbl);
+    }
+
+    async function showOthersSubs() {
+      setNav('others-subs', null, 'Others', [{label:'Home',fn:'showHome()'},{label:'Others'}]);
+      var r = await fetch('/api/files/others-subcats');
+      if (!r.ok) return;
+      var data = await r.json();
+      var keys = Object.keys(data);
+      if (!keys.length) { document.getElementById('content').innerHTML = '<div class="empty"><h3>No miscellaneous files</h3></div>'; return; }
+      var h = '<div class="shd"><h3>Others by Extension</h3></div><div class="sg">';
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        h += '<div class="sc" onclick="openOthersSub(\'' + esc(k) + '\')">';
+        h += '<div class="sci">&#128196;</div><div class="scn">' + data[k] + '</div>';
+        h += '<div class="scl">' + esc(k) + '</div></div>';
+      }
+      h += '</div>';
+      document.getElementById('content').innerHTML = h;
+    }
+
+    async function openOthersSub(ext) {
+      var clean = ext.startsWith('.') ? ext.slice(1) : ext;
+      setNav('others-sub', ext, ext + ' Files',
+        [{label:'Home',fn:'showHome()'},{label:'Others',fn:'showOthersSubs()'},{label:ext}]);
+      var r = await fetch('/api/files/ext/' + encodeURIComponent(clean));
+      renderGrid(r.ok ? await r.json() : [], ext + ' Files');
+    }
+
+    // ── FOLDERS ───────────────────────────────────────────
+    async function openFolder(fid, fname) {
+      setNav('folder', fid, 'Folder: ' + fname, [{label:'Home',fn:'showHome()'},{label:fname}]);
+      var el = document.getElementById('content');
+      el.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--mu)">Loading...</div>';
+      var h = '';
+      // Sub-folders
+      var subs = [];
+      for (var i = 0; i < flatFolders.length; i++) {
+        if (flatFolders[i].parentFolderId === fid) subs.push(flatFolders[i]);
+      }
+      if (subs.length) {
+        h += '<div class="shd"><h3>Sub-folders</h3>' +
+             '<button onclick="openFolderModal(' + fid + ')" style="font-size:.75rem;color:var(--bl);background:none;border:1px solid var(--bl);border-radius:6px;padding:.2rem .6rem;cursor:pointer">+ New</button></div>';
+        h += '<div class="cg">';
+        for (var si = 0; si < subs.length; si++) {
+          var s = subs[si];
+          var lk2 = s.isProtected ? '&#128274; ' : '';
+          h += '<div class="cc" style="background:linear-gradient(135deg,#1e293b,#0f172a)" onclick="handleFolderClick(' + s.folderId + ',\'' + esc(s.folderName) + '\',' + (!!s.isProtected) + ')">';
+          h += '<div class="ci">&#128194;</div>';
+          h += '<div class="ck" style="font-size:1rem">' + lk2 + esc(s.folderName) + '</div>';
+          h += '<div class="cl">' + s.fileCount + ' files</div></div>';
+        }
+        h += '</div>';
+      } else {
+        h += '<div style="text-align:right;margin-bottom:.75rem">' +
+             '<button onclick="openFolderModal(' + fid + ')" style="font-size:.75rem;color:var(--bl);background:none;border:1px solid var(--bl);border-radius:6px;padding:.2rem .65rem;cursor:pointer">+ New sub-folder</button></div>';
+      }
+      // Extension stats
+      try {
+        var sr = await fetch('/api/files/folder/' + fid + '/extstats');
+        if (sr.ok) {
+          var stats = await sr.json();
+          var ekeys = Object.keys(stats);
+          if (ekeys.length) {
+            ekeys.sort(function(a,b){return stats[b]-stats[a];});
+            h += '<div class="shd"><h3>Files by Type</h3></div><div class="cg">';
+            for (var ei = 0; ei < ekeys.length; ei++) {
+              var ext = ekeys[ei];
+              var ecol = EXT_COLORS[ext] || '#475569';
+              h += '<div class="cc" style="background:linear-gradient(135deg,' + ecol + 'cc,' + ecol + '88)" onclick="openFolderExt(' + fid + ',\'' + esc(fname) + '\',\'' + esc(ext) + '\')">';
+              h += '<div class="ci">&#128196;</div>';
+              h += '<div class="ck">' + stats[ext] + '</div>';
+              h += '<div class="cl">.' + ext.toLowerCase() + '</div></div>';
+            }
+            h += '</div>';
+          }
+        }
+      } catch(ignored) {}
+      // Files
+      try {
+        var fr = await fetch('/api/files/folder/' + fid);
+        var files = fr.ok ? await fr.json() : [];
+        if (files.length) {
+          h += '<div class="shd"><h3>All Files</h3><span style="font-size:.78rem;color:var(--mu)">' + files.length + ' files</span></div>';
+          h += '<div class="fg">';
+          for (var fi = 0; fi < files.length; fi++) h += fileCard(files[fi], false);
+          h += '</div>';
+        } else if (!subs.length) {
+          h += '<div class="empty"><div style="font-size:3rem;opacity:.4">&#128235;</div><h3 style="margin:.75rem 0 .3rem">Empty folder</h3></div>';
+        }
+      } catch(ignored) {}
+      el.innerHTML = h;
+    }
+
+    async function openFolderExt(fid, fname, ext) {
+      setNav('folder', fid, fname + ' - .' + ext.toLowerCase(),
+        [{label:'Home',fn:'showHome()'},{label:fname,fn:'openFolder(' + fid + ',\'' + esc(fname) + '\')'}]);
+      var r = await fetch('/api/files/folder/' + fid + '/ext/' + encodeURIComponent(ext));
+      renderGrid(r.ok ? await r.json() : [], '.' + ext.toLowerCase() + ' files');
+    }
+
+    function handleFolderClick(fid, fname, isProtected) {
+      if (!isProtected) { openFolder(fid, fname); return; }
+      var t = unlockedMap[fid];
+      if (t && (Date.now() - t) < 1800000) { openFolder(fid, fname); return; }
+      showPinModal(fid, fname);
+    }
+
+    async function delFolder(fid, e) {
+      e.stopPropagation();
+      if (!confirm('Delete folder? Files move to root.')) return;
+      var r = await fetch('/api/folders/' + fid, {method:'DELETE'});
+      if (r.ok) {
+        toast('Folder deleted', 'ts');
+        if (ST.view === 'folder' && ST.id === fid) await showHome();
+        await loadFolders();
+      } else toast('Delete failed', 'te');
+    }
+
+    function openFolderModal(parentId) {
+      subParentId = (parentId !== null && parentId !== undefined) ? parentId : null;
+      document.getElementById('fmodTitle').textContent = subParentId ? 'New Sub-folder' : 'New Folder';
+      document.getElementById('fni').value = '';
+      document.getElementById('fmod').classList.add('show');
+      setTimeout(function(){ document.getElementById('fni').focus(); }, 50);
+    }
+
+    function closeFolderModal() {
+      document.getElementById('fmod').classList.remove('show');
+      document.getElementById('fni').value = '';
+      subParentId = null;
+      document.getElementById('fmodTitle').textContent = 'New Folder';
+    }
+
+    async function doCreateFolder() {
+      var name = document.getElementById('fni').value.trim();
+      if (!name) { toast('Enter folder name', 'te'); return; }
+      var body = {folderName: name};
+      if (subParentId) body.parentId = subParentId;
+      var r = await fetch('/api/folders', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      var d = await r.json();
+      if (d.error) { toast(d.error, 'te'); return; }
+      closeFolderModal();
+      toast('Folder created!', 'ts');
+      await loadFolders();
+      if (ST.view === 'folder' && subParentId && ST.id === subParentId) await refresh();
+    }
+
+    // ── PIN ───────────────────────────────────────────────
+    function showPinModal(fid, fname) {
+      pinFolderId = fid; pinFolderName = fname; pinValue = '';
+      document.getElementById('pinFolderName').textContent = fname;
+      document.getElementById('pinError').textContent      = '';
+      updatePinDots();
+      document.getElementById('pinModal').classList.add('show');
+    }
+
+    function closePinModal() {
+      document.getElementById('pinModal').classList.remove('show');
+      pinValue = ''; updatePinDots();
+    }
+
+    function pinKey(v) {
+      if      (v === 'DEL') pinValue = pinValue.slice(0, -1);
+      else if (v === 'C')   pinValue = '';
+      else if (pinValue.length < 8) pinValue += v;
+      updatePinDots();
+      if (pinValue.length === 4) setTimeout(doVerifyPin, 130);
+    }
+
+    function updatePinDots() {
+      var dots = document.querySelectorAll('#pinDots .pin-dot');
+      for (var i = 0; i < dots.length; i++) {
+        dots[i].classList.toggle('filled', i < pinValue.length);
+      }
+    }
+
+    async function doVerifyPin() {
+      try {
+        var r = await fetch('/api/folders/' + pinFolderId + '/verify', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({pin: pinValue})
+        });
+        var d = await r.json();
+        if (d.verified) {
+          unlockedMap[pinFolderId] = Date.now();
+          closePinModal();
+          toast('Folder unlocked!', 'ts');
+          await openFolder(pinFolderId, pinFolderName);
+        } else {
+          document.getElementById('pinError').textContent = 'Wrong PIN';
+          pinValue = ''; updatePinDots();
+          setTimeout(function(){ document.getElementById('pinError').textContent = ''; }, 1800);
+        }
+      } catch(e) {
+        pinValue = ''; updatePinDots();
+        document.getElementById('pinError').textContent = 'Error - try again';
+      }
+    }
+
+    function openSetPinModal(fid, fname, isProtected, e) {
+      e.stopPropagation();
+      setPinId = fid; setPinRemove = isProtected;
+      document.getElementById('setPinTitle').textContent = isProtected ? 'Remove Protection' : 'Protect Folder';
+      var b = '';
+      if (isProtected) {
+        b = '<div style="font-size:.85rem;color:var(--mu);padding:.25rem 0 .75rem">Enter current PIN to remove protection from <strong>' + esc(fname) + '</strong></div>' +
+            '<div class="mfg"><label class="mfl">Current PIN</label><input type="password" class="mfi" id="pi1" placeholder="Current PIN"/></div>' +
+            '<div id="spe" style="font-size:.78rem;color:var(--rd);min-height:18px"></div>';
+        document.getElementById('savePinBtn').textContent = 'Remove';
+      } else {
+        b = '<div class="mfg"><label class="mfl">Set PIN (4-8 chars)</label><input type="password" class="mfi" id="pi1" placeholder="Enter PIN" maxlength="8"/></div>' +
+            '<div class="mfg"><label class="mfl">Confirm PIN</label><input type="password" class="mfi" id="pi2" placeholder="Confirm PIN" maxlength="8" onkeydown="if(event.key===\'Enter\')doSavePin()"/></div>' +
+            '<div id="spe" style="font-size:.78rem;color:var(--rd);min-height:18px"></div>';
+        document.getElementById('savePinBtn').textContent = 'Set PIN';
+      }
+      document.getElementById('setPinBody').innerHTML = b;
+      document.getElementById('setPinModal').classList.add('show');
+      setTimeout(function(){ var e2 = document.getElementById('pi1'); if(e2) e2.focus(); }, 50);
+    }
+
+    function closeSetPinModal() {
+      document.getElementById('setPinModal').classList.remove('show');
+    }
+
+    async function doSavePin() {
+      var p1el = document.getElementById('pi1');
+      var pin  = p1el ? p1el.value : '';
+      var err  = document.getElementById('spe');
+      if (!setPinRemove) {
+        var p2 = document.getElementById('pi2') ? document.getElementById('pi2').value : '';
+        if (pin.length < 4) { if(err) err.textContent = 'PIN min 4 chars'; return; }
+        if (pin !== p2)     { if(err) err.textContent = 'PINs do not match'; return; }
+      } else {
+        if (!pin) { toast('Enter current PIN', 'te'); return; }
+      }
+      try {
+        var r = await fetch('/api/folders/' + setPinId + '/protect', {
+          method:'PUT', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({enable: !setPinRemove, pin: pin})
+        });
+        var d = await r.json();
+        if (d.error) { toast(d.error, 'te'); return; }
+        closeSetPinModal();
+        toast(d.message, 'ts');
+        if (setPinRemove) delete unlockedMap[setPinId];
+        await loadFolders();
+      } catch(e) { toast('Error saving PIN', 'te'); }
+    }
+
+    // ── FILE GRID ─────────────────────────────────────────
+    function renderGrid(files, title) {
+      var cnt = files.length;
+      var h = '<div class="shd"><h3>' + esc(title) + '</h3>' +
+              '<span style="font-size:.78rem;color:var(--mu)">' + cnt + ' file' + (cnt!==1?'s':'') + '</span></div>';
+      if (!files.length) {
+        document.getElementById('content').innerHTML = h +
+          '<div class="empty"><div style="font-size:3rem;opacity:.4">&#128235;</div><h3 style="margin:.75rem 0 .3rem">No files here</h3></div>';
+        return;
+      }
+      h += '<div class="fg">';
+      for (var i = 0; i < files.length; i++) h += fileCard(files[i], false);
+      h += '</div>';
+      document.getElementById('content').innerHTML = h;
+    }
+
+    function fileCard(f, isShared) {
+      var canP = f.isImage || canPreview(f.fileType, f.fileName);
+      var base = isShared ? '/api/share' : '/api/files';
+      var thumb = f.isImage
+        ? '<img src="' + base + '/preview/' + f.fileId + '" loading="lazy" onerror="this.style.display=\'none\'">'
+        : '<div class="ti">' + fileIcon(f.fileType, f.fileName) + '</div>';
+      var h = '<div class="fc"><div class="ft">' + thumb + '<div class="fov">';
+      if (canP) h += '<button class="ob" onclick="prevFile(' + f.fileId + ',\'' + esc(f.fileName) + '\',\'' + (f.fileType||'') + '\',' + (!!isShared) + ')">View</button>';
+      if (!isShared || f.permission === 'download')
+        h += '<a class="ob" href="' + base + '/download/' + f.fileId + '" onclick="event.stopPropagation()">&#8659;</a>';
+      if (!isShared) {
+        h += '<button class="ob" style="background:rgba(99,102,241,.85);color:#fff" onclick="openShareModal(' + f.fileId + ',\'' + esc(f.fileName) + '\',event)">&#128279;</button>';
+        var nm = (f.fileName||'').toLowerCase();
+        var eligible = (f.fileType && (f.fileType.includes('pdf')||f.fileType.includes('text'))) ||
+          nm.endsWith('.txt')||nm.endsWith('.md')||nm.endsWith('.pdf')||nm.endsWith('.py')||
+          nm.endsWith('.java')||nm.endsWith('.js')||nm.endsWith('.ts')||nm.endsWith('.json')||
+          nm.endsWith('.xml')||nm.endsWith('.html')||nm.endsWith('.css')||nm.endsWith('.sql')||
+          nm.endsWith('.kt')||nm.endsWith('.sh')||nm.endsWith('.yaml')||nm.endsWith('.yml');
+        if (eligible)
+          h += '<button id="idx_' + f.fileId + '" class="ob" style="background:rgba(16,185,129,.8);color:#fff" onclick="ragIndexFile(' + f.fileId + ')" title="Index for AI">&#9889;</button>';
+        h += '<button class="ob" style="background:rgba(239,68,68,.85);color:#fff" onclick="delFile(' + f.fileId + ',event)">&#128465;</button>';
+      }
+      h += '</div></div><div class="fb">';
+      h += '<div class="fn" title="' + esc(f.fileName) + '">' + esc(f.fileName) + '</div>';
+      h += '<div class="fs2">' + (f.fileSize||'') + '</div>';
+      if (!isShared) h += '<div class="fd">' + fmtDate(f.uploadedAt) + '</div>';
+      else           h += '<div class="fd">By ' + esc(f.sharedBy||'') + '</div>';
+      if (f.genre)   h += '<div class="gbadge">&#127991; ' + esc(f.genre) + (f.genreSub ? ' &rsaquo; ' + esc(f.genreSub) : '') + '</div>';
+      h += '</div></div>';
+      return h;
+    }
+
+    function canPreview(type, name) {
+      if (!name) return false;
+      var n = name.toLowerCase();
+      if (type && (type.startsWith('image/') || type.includes('pdf'))) return true;
+      var exts = ['.java','.kt','.py','.js','.ts','.jsx','.tsx','.html','.htm','.css',
+        '.json','.xml','.yaml','.yml','.sql','.sh','.bash','.md','.txt','.log',
+        '.c','.cpp','.h','.cs','.go','.rs','.rb','.php','.gradle','.toml',
+        '.bat','.ps1','.properties','.conf','.ini','.cfg'];
+      for (var i = 0; i < exts.length; i++) { if (n.endsWith(exts[i])) return true; }
+      return false;
+    }
+
+    // ── PREVIEW ───────────────────────────────────────────
+    async function prevFile(fid, fname, ftype, isShared) {
+      var base = isShared ? '/api/share' : '/api/files';
+      document.getElementById('pov').classList.add('show');
+      document.getElementById('ptitle').textContent   = fname;
+      document.getElementById('picon').textContent    = fileIcon(ftype, fname);
+      document.getElementById('pdl').href             = base + '/download/' + fid;
+      document.getElementById('plang').style.display  = 'none';
+      document.getElementById('pbody').innerHTML      = '<div style="text-align:center;padding:4rem;color:#475569">Loading...</div>';
+      try {
+        var resp = await fetch(base + '/preview/' + fid);
+        if (!resp.ok) throw new Error('Status ' + resp.status);
+        if (ftype && ftype.startsWith('image/')) {
+          var b = await resp.blob();
+          var u = URL.createObjectURL(b);
+          document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:1rem;background:#0a0f1a;min-height:300px;display:flex;align-items:center;justify-content:center"><img src="' + u + '" style="max-width:100%;max-height:78vh;border-radius:8px;object-fit:contain"/></div>';
+        } else if (ftype && ftype.includes('pdf')) {
+          var b2 = await resp.blob();
+          var u2 = URL.createObjectURL(b2);
+          document.getElementById('pbody').innerHTML = '<embed src="' + u2 + '" type="application/pdf" style="width:100%;height:80vh;display:block"/>';
+        } else {
+          var text = await resp.text();
+          var lang = getLang(fname);
+          var hlang = hljsLang(fname);
+          if (lang !== 'Plain Text') {
+            var lb = document.getElementById('plang');
+            lb.textContent = lang; lb.style.display = 'inline';
+          }
+          var hl = null;
+          if (window.hljs && hlang) {
+            try { hl = hljs.highlight(text, {language:hlang, ignoreIllegals:true}).value.split('\n'); } catch(ex) {}
+          }
+          var lines = text.split('\n');
+          var ph = '<div class="cv"><table>';
+          for (var i = 0; i < lines.length; i++) {
+            var lc = hl ? (hl[i]||'') : esc(lines[i]);
+            ph += '<tr><td class="ln">' + (i+1) + '</td><td class="lc">' + lc + '</td></tr>';
+          }
+          ph += '</table></div>';
+          document.getElementById('pbody').innerHTML = ph;
+        }
+      } catch(ex) {
+        document.getElementById('pbody').innerHTML = '<div style="text-align:center;padding:3rem;color:#ef4444">Preview unavailable &mdash; <a href="' + base + '/download/' + fid + '" style="color:#6366f1">Download</a></div>';
+      }
+    }
+
+    function closePrev() { document.getElementById('pov').classList.remove('show'); }
+
+    // ── FILE OPS ──────────────────────────────────────────
+    async function delFile(fid, e) {
+      e.stopPropagation();
+      if (!confirm('Delete this file permanently?')) return;
+      var r = await fetch('/api/files/' + fid, {method:'DELETE'});
+      if (r.ok) { toast('File deleted', 'ts'); await loadFolders(); await refresh(); }
+      else toast('Delete failed', 'te');
+    }
+
+    // ── UPLOAD ────────────────────────────────────────────
+    function openUpload() {
+      document.getElementById('umod').classList.add('show');
+      if (ST.view === 'folder' && ST.id) document.getElementById('fsel').value = ST.id;
+    }
+
+    function closeUpload() {
+      document.getElementById('umod').classList.remove('show');
+      document.getElementById('ufi').value = '';
+      document.getElementById('dtxt').textContent = 'Click or drag files here';
+    }
+
+    function onFilePick(inp) {
+      var n = inp.files.length;
+      document.getElementById('dtxt').textContent = n === 1 ? inp.files[0].name : n + ' files selected';
+    }
+
+    function onDrop(e) {
+      e.preventDefault();
+      var inp = document.getElementById('ufi');
+      if (e.dataTransfer && e.dataTransfer.files) {
+        inp.files = e.dataTransfer.files;
+        onFilePick(inp);
+      }
+    }
+
+    async function doUpload() {
+      var inp = document.getElementById('ufi');
+      if (!inp.files || !inp.files.length) { toast('Select a file first', 'te'); return; }
+      var fid = document.getElementById('fsel').value;
+      var ok = 0, fail = 0;
+      toast('Uploading...', 'ti');
+      for (var i = 0; i < inp.files.length; i++) {
+        var fd = new FormData();
+        fd.append('file', inp.files[i]);
+        if (fid) fd.append('folderId', fid);
+        try {
+          var r = await fetch('/api/files/upload', {method:'POST', body:fd});
+          if (r.status === 401) { toast('Session expired', 'te'); setTimeout(function(){ location.href='/login.html'; }, 1500); closeUpload(); return; }
+          if (r.ok) ok++; else fail++;
+        } catch(ex) { fail++; }
+      }
+      closeUpload();
+      if (ok > 0) { toast(ok + ' file' + (ok>1?'s':'') + ' uploaded!', 'ts'); await loadFolders(); await refresh(); }
+      else toast('Upload failed', 'te');
+    }
+
+    // ── SEARCH ────────────────────────────────────────────
+    function handleSearch(val) {
+      clearTimeout(sTimer);
+      if (!val || !val.trim()) { refresh(); return; }
+      sTimer = setTimeout(async function() {
+        setNav('search', val, 'Search: ' + val, [{label:'Home',fn:'showHome()'}]);
+        var r = await fetch('/api/files/search?q=' + encodeURIComponent(val.trim()));
+        renderGrid(r.ok ? await r.json() : [], 'Results for "' + val + '"');
+      }, 350);
+    }
+
+    // ── SHARING ───────────────────────────────────────────
+    function openShareModal(fid, fname, e) {
+      e.stopPropagation();
+      shareFileId = fid;
+      document.getElementById('shareFileName').textContent = fname;
+      document.getElementById('shareEmail').value = '';
+      document.getElementById('shareResult').innerHTML = '';
+      document.getElementById('shareModal').classList.add('show');
+      loadShareList(fid);
+      setTimeout(function(){ document.getElementById('shareEmail').focus(); }, 50);
+    }
+
+    function closeShareModal() { document.getElementById('shareModal').classList.remove('show'); }
+
+    async function loadShareList(fid) {
+      try {
+        var r = await fetch('/api/share/sent/' + fid);
+        if (!r.ok) return;
+        var list = await r.json();
+        var el = document.getElementById('shareList');
+        if (!list.length) { el.innerHTML = '<div style="font-size:.75rem;color:var(--mu)">Not shared with anyone yet</div>'; return; }
+        var h = '<div style="font-size:.75rem;font-weight:700;color:var(--mu);margin-bottom:.4rem">Shared with:</div>';
+        for (var i = 0; i < list.length; i++) {
+          var s = list[i];
+          h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:.4rem .6rem;background:var(--bg);border-radius:8px;margin-bottom:.3rem;font-size:.8rem">';
+          h += '<span>' + esc(s.sharedWith||'') + ' (' + (s.permission||'view') + ')</span>';
+          h += '<button onclick="revokeShare(' + s.shareId + ')" style="background:none;border:none;color:var(--rd);cursor:pointer;font-size:.8rem">Remove</button></div>';
+        }
+        el.innerHTML = h;
+      } catch(e) {}
+    }
+
+    async function doShare() {
+      var email = document.getElementById('shareEmail').value.trim();
+      var perm  = document.getElementById('sharePerm').value;
+      var res   = document.getElementById('shareResult');
+      if (!email) { res.innerHTML = '<span style="color:var(--rd)">Enter email</span>'; return; }
+      try {
+        var r = await fetch('/api/share', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({fileId: String(shareFileId), email: email, permission: perm})
+        });
+        var d = await r.json();
+        if (d.error) res.innerHTML = '<span style="color:var(--rd)">' + esc(d.error) + '</span>';
+        else {
+          res.innerHTML = '<span style="color:var(--gr)">' + esc(d.message) + '</span>';
+          document.getElementById('shareEmail').value = '';
+          loadShareList(shareFileId);
+        }
+      } catch(e) { res.innerHTML = '<span style="color:var(--rd)">Error, try again</span>'; }
+    }
+
+    async function revokeShare(sid) {
+      var r = await fetch('/api/share/' + sid, {method:'DELETE'});
+      if (r.ok) loadShareList(shareFileId);
+    }
+
+    async function showSharedWithMe() {
+      setNav('shared', null, 'Shared with Me', [{label:'Home',fn:'showHome()'},{label:'Shared with Me'}]);
+      try {
+        var r = await fetch('/api/share/received');
+        var files = r.ok ? await r.json() : [];
+        var el = document.getElementById('content');
+        if (!files.length) { el.innerHTML = '<div class="empty"><div style="font-size:3rem">&#129309;</div><h3 style="margin:.75rem 0 .3rem">No files shared with you</h3></div>'; return; }
+        var h = '<div class="shd"><h3>Shared with Me</h3><span style="font-size:.78rem;color:var(--mu)">' + files.length + ' files</span></div><div class="fg">';
+        for (var i = 0; i < files.length; i++) h += fileCard(files[i], true);
+        h += '</div>';
+        el.innerHTML = h;
+      } catch(e) { document.getElementById('content').innerHTML = '<div class="empty"><h3>Error loading</h3></div>'; }
+    }
+
+    // ── GENRE ─────────────────────────────────────────────
+    async function openGenre(genre) {
+      setNav('genre', genre, genre, [{label:'Home',fn:'showHome()'},{label:genre}]);
+      try {
+        var gr = await fetch('/api/rag/genres');
+        var allg = gr.ok ? await gr.json() : [];
+        var subs = [];
+        for (var gi = 0; gi < allg.length; gi++) {
+          if (allg[gi].genre === genre && allg[gi].genre_sub) subs.push(allg[gi]);
+        }
+        var h = '';
+        if (subs.length > 1) {
+          h += '<div class="shd"><h3>Sub-categories</h3></div><div class="sg">';
+          for (var si = 0; si < subs.length; si++) {
+            var s = subs[si];
+            h += '<div class="sc" onclick="openGenreSub(\'' + esc(genre) + '\',\'' + esc(s.genre_sub) + '\')">';
+            h += '<div class="sci">&#128194;</div><div class="scn">' + s.count + '</div>';
+            h += '<div class="scl">' + esc(s.genre_sub) + '</div></div>';
+          }
+          h += '</div>';
+        }
+        var r2 = await fetch('/api/files/genre/' + encodeURIComponent(genre));
+        var files = r2.ok ? await r2.json() : [];
+        h += '<div class="shd"><h3>' + esc(genre) + '</h3><span style="font-size:.78rem;color:var(--mu)">' + files.length + ' files</span></div>';
+        if (files.length) { h += '<div class="fg">'; for (var fi = 0; fi < files.length; fi++) h += fileCard(files[fi], false); h += '</div>'; }
+        else h += '<div class="empty"><h3>No files in this genre</h3><p style="font-size:.82rem">Index files using &#9889; to auto-classify</p></div>';
+        document.getElementById('content').innerHTML = h;
+      } catch(e) { document.getElementById('content').innerHTML = '<div class="empty"><h3>Error loading genre</h3></div>'; }
+    }
+
+    async function openGenreSub(genre, sub) {
+      setNav('genre', genre, genre + ' - ' + sub,
+        [{label:'Home',fn:'showHome()'},{label:genre,fn:'openGenre(\'' + esc(genre) + '\')'}]);
+      var r = await fetch('/api/files/genre/' + encodeURIComponent(genre) + '?sub=' + encodeURIComponent(sub));
+      renderGrid(r.ok ? await r.json() : [], genre + ' - ' + sub);
+    }
+
+    // ── LOGOUT ────────────────────────────────────────────
+    async function doLogout() {
+      await fetch('/api/auth/logout', {method:'POST'});
+      location.href = '/login.html';
+    }
+
+    // ── UTILS ─────────────────────────────────────────────
+    function fileIcon(type, name) {
+      if (!type) type = ''; if (!name) name = '';
+      var n = name.toLowerCase(); var ct = type.toLowerCase();
+      if (ct.includes('pdf')||n.endsWith('.pdf'))                              return '&#128213;';
+      if (ct.startsWith('image/'))                                             return '&#128444;';
+      if (ct.includes('word')||n.endsWith('.docx')||n.endsWith('.doc'))        return '&#128221;';
+      if (ct.includes('sheet')||ct.includes('excel')||n.endsWith('.xlsx')||n.endsWith('.xls')||n.endsWith('.csv')) return '&#128202;';
+      if (ct.includes('presentation')||n.endsWith('.pptx'))                    return '&#128209;';
+      if (n.endsWith('.java')||n.endsWith('.kt'))                              return '&#9749;';
+      if (n.endsWith('.py'))                                                   return '&#128013;';
+      if (n.endsWith('.js')||n.endsWith('.ts')||n.endsWith('.jsx')||n.endsWith('.tsx')) return '&#128249;';
+      if (n.endsWith('.html')||n.endsWith('.css'))                             return '&#127760;';
+      if (n.endsWith('.json')||n.endsWith('.yaml')||n.endsWith('.yml'))        return '&#9881;';
+      if (n.endsWith('.sql'))                                                  return '&#128450;';
+      if (n.endsWith('.md')||n.endsWith('.txt'))                               return '&#128196;';
+      if (n.endsWith('.zip')||n.endsWith('.rar')||n.endsWith('.gz'))           return '&#128476;';
+      return '&#128230;';
+    }
+
+    function getLang(fname) {
+      var n = fname.toLowerCase();
+      if (n.endsWith('.java')||n.endsWith('.kt')) return 'Java';
+      if (n.endsWith('.py'))           return 'Python';
+      if (n.endsWith('.js')||n.endsWith('.mjs')) return 'JavaScript';
+      if (n.endsWith('.ts')||n.endsWith('.tsx')) return 'TypeScript';
+      if (n.endsWith('.html'))         return 'HTML';
+      if (n.endsWith('.css'))          return 'CSS';
+      if (n.endsWith('.json'))         return 'JSON';
+      if (n.endsWith('.xml'))          return 'XML';
+      if (n.endsWith('.yaml')||n.endsWith('.yml')) return 'YAML';
+      if (n.endsWith('.sql'))          return 'SQL';
+      if (n.endsWith('.sh'))           return 'Shell';
+      if (n.endsWith('.md'))           return 'Markdown';
+      if (n.endsWith('.go'))           return 'Go';
+      if (n.endsWith('.rs'))           return 'Rust';
+      if (n.endsWith('.cs'))           return 'C#';
+      return 'Plain Text';
+    }
+
+    function hljsLang(fname) {
+      var n = fname.toLowerCase();
+      if (n.endsWith('.java'))  return 'java';
+      if (n.endsWith('.kt'))    return 'kotlin';
+      if (n.endsWith('.py'))    return 'python';
+      if (n.endsWith('.js')||n.endsWith('.mjs')) return 'javascript';
+      if (n.endsWith('.ts'))    return 'typescript';
+      if (n.endsWith('.html')||n.endsWith('.htm')) return 'xml';
+      if (n.endsWith('.css'))   return 'css';
+      if (n.endsWith('.json'))  return 'json';
+      if (n.endsWith('.xml'))   return 'xml';
+      if (n.endsWith('.yaml')||n.endsWith('.yml')) return 'yaml';
+      if (n.endsWith('.sql'))   return 'sql';
+      if (n.endsWith('.sh'))    return 'bash';
+      if (n.endsWith('.md'))    return 'markdown';
+      if (n.endsWith('.c')||n.endsWith('.h'))  return 'c';
+      if (n.endsWith('.cpp'))   return 'cpp';
+      if (n.endsWith('.cs'))    return 'csharp';
+      if (n.endsWith('.go'))    return 'go';
+      if (n.endsWith('.rs'))    return 'rust';
+      return null;
+    }
+
+    function fmtDate(s) {
+      if (!s) return '';
+      try { return new Date(s).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+      catch(e) { return ''; }
+    }
+
+    function esc(s) {
+      return String(s == null ? '' : s)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    }
+
+    function toast(msg, cls) {
+      var t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast ' + (cls||'ts') + ' show';
+      clearTimeout(t._t);
+      t._t = setTimeout(function(){ t.classList.remove('show'); }, 2800);
+    }
+
+    // ── KEYBOARD ──────────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closePrev();
+        document.getElementById('umod').classList.remove('show');
+        document.getElementById('fmod').classList.remove('show');
+        closeShareModal();
+        closeSetPinModal();
+        closePinModal();
+      }
+      if ((e.ctrlKey||e.metaKey) && e.key === 'u') { e.preventDefault(); openUpload(); }
+    });
+
+    // ── RAG FUNCTIONS ─────────────────────────────────────
+    function toggleRag() {
+      ragOpen = !ragOpen;
+      document.getElementById('ragPanel').style.display = ragOpen ? 'flex' : 'none';
+      if (ragOpen) {
+        ragLoadStatus();
+        setTimeout(function(){ var i = document.getElementById('ragInp'); if(i) i.focus(); }, 50);
+      }
+    }
+
+    async function ragLoadStatus() {
+      try {
+        var r = await fetch('/api/rag/status');
+        if (!r.ok) return;
+        var d = await r.json();
+        var el = document.getElementById('ragStatus');
+        if (!el) return;
+        if (!d.hasApiKey) {
+          el.textContent = 'Add OPENAI_API_KEY to Render';
+        } else {
+          var tc = parseInt(d.totalChunks||0);
+          var fc = d.indexedFiles ? d.indexedFiles.length : 0;
+          el.textContent = tc > 0 ? tc + ' chunks - ' + fc + ' files indexed' : 'Ready - click Index All';
+        }
+      } catch(e) {}
+    }
+
+    async function ragSend() {
+      var inp = document.getElementById('ragInp');
+      if (!inp) return;
+      var q = inp.value.trim();
+      if (!q) return;
+      inp.value = '';
+      ragMsg('user', q);
+      ragMsg('thinking', '');
+      var hist = [];
+      var sl = ragHistory.slice(-6);
+      for (var i = 0; i < sl.length; i++) {
+        if (sl[i].role === 'user' || sl[i].role === 'assistant')
+          hist.push({role: sl[i].role, content: sl[i].content});
+      }
+      try {
+        var r = await fetch('/api/rag/chat', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({question: q, history: hist})
+        });
+        var d = await r.json();
+        ragRemoveThinking();
+        if (d.error) { ragMsg('error', d.error); }
+        else {
+          ragMsg('answer', d.answer, d.sources);
+          ragHistory.push({role:'user', content: q});
+          ragHistory.push({role:'assistant', content: d.answer});
+        }
+      } catch(e) {
+        ragRemoveThinking();
+        ragMsg('error', 'Connection error. Try again.');
+      }
+    }
+
+    function ragMsg(type, content, sources) {
+      var msgs = document.getElementById('ragMsgs');
+      if (!msgs) return;
+      var w = document.getElementById('ragWelcome');
+      if (w && (type === 'user' || type === 'answer')) w.remove();
+      var div = document.createElement('div');
+      if (type === 'user') {
+        div.className = 'rag-msg rag-user';
+        div.innerHTML = '<div class="rag-bub rag-bub-u">' + esc(content) + '</div>';
+      } else if (type === 'thinking') {
+        div.className = 'rag-msg rag-bot'; div.id = 'ragThink';
+        div.innerHTML = '<div class="rag-bub rag-bub-a"><span class="dot">&#9679;</span><span class="dot">&#9679;</span><span class="dot">&#9679;</span></div>';
+      } else if (type === 'error') {
+        div.className = 'rag-msg rag-bot';
+        div.innerHTML = '<div class="rag-bub rag-bub-e">&#9888; ' + esc(content) + '</div>';
+      } else {
+        div.className = 'rag-msg rag-bot';
+        var sh = '';
+        if (sources && sources.length) {
+          sh = '<div class="rag-src-wrap">&#128218; ';
+          for (var i = 0; i < sources.length; i++) sh += '<span class="rag-src">' + esc(sources[i]) + '</span>';
+          sh += '</div>';
+        }
+        div.innerHTML = '<div class="rag-bub rag-bub-a">' + content.replace(/\n/g,'<br>') + '</div>' + sh;
+      }
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function ragRemoveThinking() {
+      var el = document.getElementById('ragThink');
+      if (el) el.remove();
+    }
+
+    function ragClear() {
+      ragHistory = [];
+      var msgs = document.getElementById('ragMsgs');
+      if (msgs) msgs.innerHTML = '<div id="ragWelcome" style="text-align:center;color:#94a3b8;font-size:.83rem;padding:2rem 1rem">Ask me anything about your files!<br><span style="font-size:.75rem;color:#cbd5e1">Click Index All first</span></div>';
+    }
+
+    async function ragIndexAll() {
+      var btn = document.getElementById('ragIdxBtn');
+      if (btn) { btn.textContent = 'Indexing...'; btn.disabled = true; }
+      try {
+        var r = await fetch('/api/rag/index-all', {method:'POST'});
+        var d = await r.json();
+        if (btn) { btn.textContent = '&#9889; Index All'; btn.disabled = false; }
+        ragMsg('answer', (d.message || d.queued + ' files queued') + '. Indexing in background!', []);
+        setTimeout(ragLoadStatus, 4000);
+      } catch(e) {
+        if (btn) { btn.textContent = '&#9889; Index All'; btn.disabled = false; }
+        ragMsg('error', 'Index failed. Check OpenAI API key in Render.');
+      }
+    }
+
+    async function ragIndexFile(fileId) {
+      var btn = document.getElementById('idx_' + fileId);
+      if (btn) { btn.textContent = '&#8987;'; btn.disabled = true; }
+      try {
+        var r = await fetch('/api/rag/index/' + fileId, {method:'POST'});
+        var d = await r.json();
+        if (btn) {
+          btn.innerHTML = d.error ? '&#10060;' : '&#9989;';
+          btn.title = d.error ? d.error : (d.chunks + ' chunks');
+          setTimeout(function() { if(btn){btn.innerHTML='&#9889;';btn.disabled=false;} }, 2500);
+        }
+        if (!d.error) ragLoadStatus();
+        else toast(d.error, 'te');
+      } catch(e) { if(btn){btn.innerHTML='&#9889;';btn.disabled=false;} }
+    }
+
+</script>
 </body>
 </html>

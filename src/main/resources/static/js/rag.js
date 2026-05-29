@@ -1,118 +1,164 @@
-// ═══════════════════════════════════════════════════════════
-// SFSS RAG — AI Chat Interface
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// SFSS RAG — AI Chat (rag.js)
+// ═══════════════════════════════════════════════════════
 
 var ragHistory = [];
-var ragIsOpen = false;
+var ragOpen    = false;
 
-function initRag() {
-  // RAG button already in HTML — inject chat panel
-  var panel = document.getElementById('ragPanel');
-  if (!panel) return;
-  loadRagStatus();
-}
+// Called after page loads
+window.addEventListener('load', function() {
+  setTimeout(ragLoadStatus, 500);
+});
 
-async function loadRagStatus() {
+async function ragLoadStatus() {
   try {
     var r = await fetch('/api/rag/status');
     if (!r.ok) return;
     var d = await r.json();
     var el = document.getElementById('ragStatusText');
-    if (el) {
-      el.textContent = d.hasApiKey
-        ? d.totalChunks + ' chunks indexed from ' + (d.indexedFiles ? d.indexedFiles.length : 0) + ' files'
-        : '⚠️ OpenAI API key not set';
+    if (!el) return;
+    if (!d.hasApiKey) {
+      el.textContent = '⚠️ Set OPENAI_API_KEY in Render';
+      var inp = document.getElementById('ragInput');
+      if (inp) inp.placeholder = 'Add OPENAI_API_KEY to Render env vars first';
+    } else {
+      var fc  = parseInt(d.totalChunks || 0);
+      var fic = d.indexedFiles ? d.indexedFiles.length : 0;
+      el.textContent = fc > 0
+        ? fc + ' chunks · ' + fic + ' files indexed'
+        : 'Ready — click ⚡ Index All to start';
     }
-    var hasKey = d.hasApiKey;
-    var inp = document.getElementById('ragInput');
-    if (inp) inp.disabled = !hasKey;
-    var btn = document.getElementById('ragSendBtn');
-    if (btn) btn.disabled = !hasKey;
-  } catch(e) {}
+  } catch(e) {
+    var el2 = document.getElementById('ragStatusText');
+    if (el2) el2.textContent = 'Status unavailable';
+  }
 }
 
 function toggleRag() {
+  ragOpen = !ragOpen;
   var panel = document.getElementById('ragPanel');
-  ragIsOpen = !ragIsOpen;
-  panel.style.display = ragIsOpen ? 'flex' : 'none';
-  if (ragIsOpen) {
-    loadRagStatus();
-    document.getElementById('ragInput').focus();
+  panel.style.display = ragOpen ? 'flex' : 'none';
+  if (ragOpen) {
+    ragLoadStatus();
+    setTimeout(function() {
+      var inp = document.getElementById('ragInput');
+      if (inp) inp.focus();
+    }, 60);
   }
 }
 
-async function sendRagMessage() {
+async function ragSend() {
   var inp = document.getElementById('ragInput');
+  if (!inp) return;
   var question = inp.value.trim();
   if (!question) return;
-
   inp.value = '';
-  appendMessage('user', question);
-  appendMessage('thinking', '...');
 
-  // Build history for context
-  var historyForApi = ragHistory.slice(-6).map(function(m) {
-    return {role: m.role === 'user' ? 'user' : 'assistant', content: m.content};
-  }).filter(function(m) { return m.role === 'user' || m.role === 'assistant'; });
+  ragAppendMsg('user', question);
+  ragAppendMsg('thinking', '');
+
+  var historyForApi = [];
+  var slice = ragHistory.slice(-6);
+  for (var i = 0; i < slice.length; i++) {
+    var m = slice[i];
+    if (m.role === 'user' || m.role === 'assistant') {
+      historyForApi.push({role: m.role, content: m.content});
+    }
+  }
 
   try {
     var r = await fetch('/api/rag/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body: JSON.stringify({question: question, history: historyForApi})
     });
     var d = await r.json();
-
-    removeThinking();
+    ragRemoveThinking();
 
     if (d.error) {
-      appendMessage('error', d.error);
+      ragAppendMsg('error', d.error);
     } else {
-      appendMessage('assistant', d.answer, d.sources);
-      // Store in history
-      ragHistory.push({role:'user', content: question});
+      ragAppendMsg('assistant', d.answer, d.sources);
+      ragHistory.push({role:'user',      content: question});
       ragHistory.push({role:'assistant', content: d.answer});
     }
   } catch(e) {
-    removeThinking();
-    appendMessage('error', 'Connection error. Please try again.');
+    ragRemoveThinking();
+    ragAppendMsg('error', 'Connection error. Please try again.');
   }
 }
 
-function appendMessage(role, content, sources) {
+function ragAppendMsg(role, content, sources) {
   var msgs = document.getElementById('ragMessages');
+  if (!msgs) return;
+
+  // Remove welcome message on first real message
+  var welcome = msgs.querySelector('div[style*="padding:2rem"]');
+  if (welcome && (role === 'user' || role === 'assistant')) {
+    welcome.remove();
+  }
+
   var div = document.createElement('div');
   div.className = 'rag-msg rag-' + role;
-  div.id = role === 'thinking' ? 'ragThinking' : '';
+  if (role === 'thinking') div.id = 'ragThinking';
 
   if (role === 'user') {
-    div.innerHTML = '<div class="rag-bubble user-bubble">' + escRag(content) + '</div>';
+    div.innerHTML = '<div class="rag-bubble user-bubble">' + ragEsc(content) + '</div>';
   } else if (role === 'thinking') {
-    div.innerHTML = '<div class="rag-bubble ai-bubble thinking-bubble"><span class="dot">●</span><span class="dot">●</span><span class="dot">●</span></div>';
+    div.innerHTML = '<div class="rag-bubble ai-bubble thinking-bubble">' +
+      '<span class="dot">●</span><span class="dot">●</span><span class="dot">●</span></div>';
   } else if (role === 'error') {
-    div.innerHTML = '<div class="rag-bubble error-bubble">⚠️ ' + escRag(content) + '</div>';
+    div.innerHTML = '<div class="rag-bubble error-bubble">⚠️ ' + ragEsc(content) + '</div>';
   } else {
     var sourcesHtml = '';
     if (sources && sources.length) {
-      sourcesHtml = '<div class="rag-sources">📚 Sources: ' +
-        sources.map(function(s) { return '<span class="rag-src">' + escRag(s) + '</span>'; }).join(' ') +
-        '</div>';
+      sourcesHtml = '<div class="rag-sources">📚 Sources: ';
+      sources.forEach(function(s) {
+        sourcesHtml += '<span class="rag-src">' + ragEsc(s) + '</span>';
+      });
+      sourcesHtml += '</div>';
     }
     div.innerHTML = '<div class="rag-bubble ai-bubble">' +
-      content.replace(/\n/g, '<br>') +
-      '</div>' + sourcesHtml;
+      content.replace(/\n/g, '<br>') + '</div>' + sourcesHtml;
   }
 
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
-function removeThinking() {
+function ragRemoveThinking() {
   var el = document.getElementById('ragThinking');
   if (el) el.remove();
 }
 
-async function indexCurrentFile(fileId) {
+function clearRagChat() {
+  ragHistory = [];
+  var msgs = document.getElementById('ragMessages');
+  if (msgs) {
+    msgs.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:.83rem;padding:2rem 1rem">' +
+      '👋 Ask me anything about your files!<br>' +
+      '<span style="font-size:.75rem;color:#cbd5e1">Click ⚡ Index All first to enable AI search</span></div>';
+  }
+}
+
+async function ragIndexAll() {
+  var btn = document.getElementById('ragIndexAllBtn');
+  if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
+  try {
+    var r = await fetch('/api/rag/index-all', {method:'POST'});
+    var d = await r.json();
+    if (btn) { btn.textContent = '⚡ Index All'; btn.disabled = false; }
+    ragAppendMsg('assistant',
+      '✅ ' + (d.message || d.queued + ' files queued') +
+      '. Indexing runs in background — ask me questions in a moment!', []);
+    setTimeout(ragLoadStatus, 4000);
+  } catch(e) {
+    if (btn) { btn.textContent = '⚡ Index All'; btn.disabled = false; }
+    ragAppendMsg('error', 'Index all failed. Check if OpenAI API key is set.');
+  }
+}
+
+async function ragIndexFile(fileId) {
   var btn = document.getElementById('idx_' + fileId);
   if (btn) { btn.textContent = '⏳'; btn.disabled = true; }
   try {
@@ -120,56 +166,20 @@ async function indexCurrentFile(fileId) {
     var d = await r.json();
     if (btn) {
       btn.textContent = d.error ? '❌' : '✅';
-      btn.title = d.error || d.chunks + ' chunks indexed';
+      btn.title       = d.error ? d.error : (d.chunks + ' chunks indexed');
       setTimeout(function() {
-        btn.textContent = '⚡';
-        btn.disabled = false;
-      }, 2000);
+        if (btn) { btn.textContent = '⚡'; btn.disabled = false; }
+      }, 2500);
     }
-    if (!d.error) loadRagStatus();
+    if (!d.error) ragLoadStatus();
+    else          toast(d.error, 'error');
   } catch(e) {
-    if (btn) { btn.textContent = '❌'; btn.disabled = false; }
+    if (btn) { btn.textContent = '⚡'; btn.disabled = false; }
   }
 }
 
-async function indexAllFiles() {
-  var btn = document.getElementById('ragIndexAllBtn');
-  if (btn) { btn.textContent = '⏳ Indexing...'; btn.disabled = true; }
-  try {
-    var r = await fetch('/api/rag/index-all', {method:'POST'});
-    var d = await r.json();
-    if (btn) {
-      btn.textContent = '⚡ Index All';
-      btn.disabled = false;
-    }
-    appendMessage('assistant', '✅ ' + d.message + '. Indexing runs in background — check status in a minute.', []);
-    setTimeout(loadRagStatus, 3000);
-  } catch(e) {
-    if (btn) { btn.textContent = '⚡ Index All'; btn.disabled = false; }
-  }
+function ragEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
-function clearRagChat() {
-  ragHistory = [];
-  document.getElementById('ragMessages').innerHTML =
-    '<div class="rag-welcome">👋 Ask me anything about your files!</div>';
-}
-
-function escRag(s) {
-  return String(s || '').replace(/[&<>"']/g, function(c) {
-    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-  });
-}
-
-// Enter key send
-document.addEventListener('DOMContentLoaded', function() {
-  var inp = document.getElementById('ragInput');
-  if (inp) {
-    inp.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendRagMessage();
-      }
-    });
-  }
-});
