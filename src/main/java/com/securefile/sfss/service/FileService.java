@@ -53,6 +53,13 @@ public class FileService {
         }
 
         fileRepository.save(fe);
+        // Auto-classify genre (instant, no external API)
+        try {
+            Map<String, String> genre = classifyGenreHeuristic(originalName, file.getContentType());
+            fe.setGenre(genre.get("genre"));
+            fe.setGenreSub(genre.get("genreSub"));
+            fileRepository.save(fe);
+        } catch (Exception ignored) {}
         logActivity(user, fe, "UPLOAD");
 
         return Map.of("success", true, "fileName", originalName,
@@ -424,4 +431,121 @@ public class FileService {
         if (bytes < 1_073_741_824) return String.format("%.1f MB", bytes / 1_048_576.0);
         return String.format("%.2f GB", bytes / 1_073_741_824.0);
     }
+
+
+    // ── AUTO-GENRE ON UPLOAD (heuristic, no OpenAI needed) ──────
+    private Map<String, String> classifyGenreHeuristic(String fileName, String fileType) {
+        String n   = (fileName  != null ? fileName  : "").toLowerCase().replaceAll("[_\\-]", " ");
+        String ct  = (fileType  != null ? fileType  : "").toLowerCase();
+        String base= n.contains(".") ? n.substring(0, n.lastIndexOf('.')) : n;
+
+        // ── CODE ────────────────────────────────────────────────
+        if (n.endsWith(".java") || n.endsWith(".kt"))           return g("Code","Java");
+        if (n.endsWith(".py") || n.endsWith(".ipynb"))          return g("Code","Python");
+        if (n.endsWith(".js")  || n.endsWith(".ts")  ||
+                n.endsWith(".jsx") || n.endsWith(".tsx") ||
+                n.endsWith(".mjs"))                                 return g("Code","JavaScript");
+        if (n.endsWith(".html") || n.endsWith(".css") ||
+                n.endsWith(".scss"))                                return g("Code","Web");
+        if (n.endsWith(".sql"))                                 return g("Code","Database");
+        if (n.endsWith(".sh")  || n.endsWith(".bash") ||
+                n.endsWith(".bat") || n.endsWith(".ps1"))           return g("Code","Scripts");
+        if (n.endsWith(".json")|| n.endsWith(".yaml") ||
+                n.endsWith(".yml") || n.endsWith(".xml")  ||
+                n.endsWith(".toml")|| n.endsWith(".env")  ||
+                n.endsWith(".properties") || n.endsWith(".ini"))    return g("Code","Config");
+        if (n.endsWith(".c")   || n.endsWith(".cpp")  ||
+                n.endsWith(".h")   || n.endsWith(".cs")   ||
+                n.endsWith(".go")  || n.endsWith(".rs"))            return g("Code","Systems");
+        if (n.endsWith(".r")   || n.endsWith(".swift") ||
+                n.endsWith(".dart")|| n.endsWith(".rb")   ||
+                n.endsWith(".php") || n.endsWith(".scala"))         return g("Code","Other Languages");
+
+        // ── IMAGES ──────────────────────────────────────────────
+        if (ct.startsWith("image/"))                            return g("Personal","Photos & Images");
+
+        // Keywords
+        boolean isExam   = kw(base,"exam","test","quiz","pyq","previous year","question paper",
+                "assignment","homework","exercise","practice test","mock");
+        boolean isCS     = kw(base,"linux","unix","kernel","network","algorithm","data structure",
+                "programming","software","operating system"," os ","android",
+                "machine learning","artificial intelligence","neural","deep learning",
+                "computer","database","compiler","web development");
+        boolean isMath   = kw(base,"math","calculus","algebra","geometry","statistics","probability","numerical");
+        boolean isPhys   = kw(base,"physics","mechanics","thermodynamics","quantum","optics","electro");
+        boolean isChem   = kw(base,"chemistry","organic","inorganic","chemical","polymer","reaction");
+        boolean isBio    = kw(base,"biology","anatomy","genetics","ecology","microb","zoology","botany","cell");
+        boolean isHist   = kw(base,"history","historical","ancient","medieval","civilization","world war");
+        boolean isEcon   = kw(base,"economics","finance","accounting","business","management","commerce","marketing");
+        boolean isStudy  = kw(base,"lecture","notes","textbook","book","chapter","study","course","syllabus","university","college","school","tutorial","learning");
+        boolean isFiction= kw(base,"novel","fiction","story","stories","tale","fantasy","romance",
+                "thriller","mystery","horror","sci fi","adventure");
+        boolean isWork   = kw(base,"report","proposal","invoice","contract","budget","project","analysis",
+                "meeting","agenda","minutes","brief","memo","presentation","plan");
+
+        // ── STUDY ───────────────────────────────────────────────
+        if (isExam) {
+            if (isCS)   return g("Study","CS Exam / Assignment");
+            if (isMath) return g("Study","Math Exam / Assignment");
+            if (isPhys) return g("Study","Physics Exam / Assignment");
+            if (isChem) return g("Study","Chemistry Exam / Assignment");
+            if (isBio)  return g("Study","Biology Exam / Assignment");
+            return      g("Study","Exam Material");
+        }
+        if (isCS)    return g("Study","Computer Science");
+        if (isMath)  return g("Study","Mathematics");
+        if (isPhys)  return g("Study","Physics");
+        if (isChem)  return g("Study","Chemistry");
+        if (isBio)   return g("Study","Biology");
+        if (isHist)  return g("Study","History");
+        if (isEcon)  return g("Study","Economics");
+        if (isStudy) return g("Study","Study Material");
+
+        // ── FICTION ─────────────────────────────────────────────
+        if (isFiction) {
+            if (kw(base,"fantasy"))                   return g("Fiction","Fantasy");
+            if (kw(base,"romance"))                   return g("Fiction","Romance");
+            if (kw(base,"thriller","mystery","horror"))return g("Fiction","Thriller / Mystery");
+            if (kw(base,"sci fi","science fiction"))  return g("Fiction","Science Fiction");
+            return g("Fiction","General Fiction");
+        }
+
+        // ── WORK ────────────────────────────────────────────────
+        if (isWork || ct.contains("presentation") ||
+                n.endsWith(".pptx") || n.endsWith(".ppt")) {
+            if (kw(base,"resume","cv","portfolio"))   return g("Personal","Resume / CV");
+            if (ct.contains("presentation") ||
+                    n.endsWith(".pptx"))                  return g("Work","Presentation");
+            return g("Work","Reports & Documents");
+        }
+
+        // ── SPREADSHEETS ────────────────────────────────────────
+        if (ct.contains("sheet") || ct.contains("excel") ||
+                n.endsWith(".xlsx") || n.endsWith(".xls") || n.endsWith(".csv"))
+            return g("Work","Data & Spreadsheets");
+
+        // ── REFERENCE ───────────────────────────────────────────
+        if (kw(base,"manual","guide","handbook","reference","documentation",
+                "readme","howto","instructions","cheatsheet"))
+            return g("Reference","Manual & Guide");
+
+        // ── PERSONAL ────────────────────────────────────────────
+        if (kw(base,"diary","journal","personal","private","note","memo"))
+            return g("Personal","Notes & Journal");
+
+        // ── DEFAULTS ────────────────────────────────────────────
+        if (ct.contains("word") || ct.contains("document")) return g("Work","Document");
+        if (ct.contains("pdf"))                             return g("Study","Document");
+        return g("Other","Uncategorized");
+    }
+
+    private Map<String, String> g(String genre, String sub) {
+        return java.util.Map.of("genre", genre, "genreSub", sub);
+    }
+
+    private boolean kw(String text, String... keywords) {
+        for (String k : keywords) { if (text.contains(k)) return true; }
+        return false;
+    }
+
 }

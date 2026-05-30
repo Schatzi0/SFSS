@@ -346,14 +346,15 @@ public class RagService {
         );
     }
 
-    private String callChatCompletion(List<Map<String, String>> messages) throws Exception {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("model", "gpt-3.5-turbo");
-        body.put("messages", messages);
-        body.put("max_tokens", 800);
-        body.put("temperature", 0.3);
 
-        String bodyStr = mapper.writeValueAsString(body);
+    // callChatCompletion — null check + proper JSON serialization
+    private String callChatCompletion(List<Map<String, String>> messages) throws Exception {
+        Map<String, Object> bodyMap = new java.util.LinkedHashMap<>();
+        bodyMap.put("model", "gpt-3.5-turbo");
+        bodyMap.put("messages", messages);
+        bodyMap.put("max_tokens", 800);
+        bodyMap.put("temperature", 0.3);
+        String bodyStr = mapper.writeValueAsString(bodyMap);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
@@ -365,10 +366,14 @@ public class RagService {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         JsonNode json = mapper.readTree(resp.body());
 
-        if (json.has("error"))
-            return "OpenAI error: " + json.get("error").get("message").asText();
-
-        return json.get("choices").get(0).get("message").get("content").asText();
+        if (json.has("error")) {
+            return "AI Error: " + json.get("error").get("message").asText();
+        }
+        JsonNode choices = json.get("choices");
+        if (choices == null || choices.isEmpty()) {
+            return "No response from AI. Check API key.";
+        }
+        return choices.get(0).get("message").get("content").asText();
     }
 
     // ─── INDEXING STATUS ─────────────────────────────────
