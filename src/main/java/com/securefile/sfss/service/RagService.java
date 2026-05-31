@@ -98,16 +98,13 @@ public class RagService {
     // ─── OPENAI EMBEDDING ─────────────────────────────────
     public float[] generateEmbedding(String text) throws Exception {
         if (openaiKey == null || openaiKey.isBlank())
-            throw new RuntimeException("OpenAI API key not configured");
-
+            throw new RuntimeException("OpenAI API key not set in environment");
+        if (text == null || text.isBlank())
+            throw new RuntimeException("Empty text");
         if (text.length() > 30000) text = text.substring(0, 30000);
 
-        String escaped = text.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r");
-
-        String body = "{\"model\":\"text-embedding-3-small\",\"input\":\"" + escaped + "\"}";
+        String body = "{\"model\":\"text-embedding-3-small\",\"input\":"
+                + mapper.writeValueAsString(text) + "}";
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/embeddings"))
@@ -119,13 +116,30 @@ public class RagService {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         JsonNode json = mapper.readTree(resp.body());
 
-        JsonNode embArray = json.get("data").get(0).get("embedding");
+        if (json.has("error")) {
+            JsonNode err = json.get("error");
+            String msg = (err.has("message")) ? err.get("message").asText() : err.asText();
+            throw new RuntimeException("OpenAI embedding error: " + msg);
+        }
+
+        JsonNode dataNode = json.get("data");
+        if (dataNode == null || !dataNode.isArray() || dataNode.isEmpty()) {
+            throw new RuntimeException("Unexpected OpenAI response: " + resp.body().substring(0, Math.min(300, resp.body().length())));
+        }
+
+        JsonNode embNode = dataNode.get(0);
+        if (embNode == null || !embNode.has("embedding")) {
+            throw new RuntimeException("No embedding in response");
+        }
+
+        JsonNode embArray = embNode.get("embedding");
         float[] embedding = new float[embArray.size()];
         for (int i = 0; i < embArray.size(); i++) {
             embedding[i] = (float) embArray.get(i).asDouble();
         }
         return embedding;
     }
+
 
     // Convert float[] to pgvector string "[0.1,0.2,...]"
     private String toVectorString(float[] embedding) {
@@ -354,28 +368,41 @@ public class RagService {
         bodyMap.put("messages", messages);
         bodyMap.put("max_tokens", 800);
         bodyMap.put("temperature", 0.3);
-        String bodyStr = mapper.writeValueAsString(bodyMap);
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
                 .header("Authorization", "Bearer " + openaiKey)
                 .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(bodyStr))
+                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(bodyMap)))
                 .build();
 
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         JsonNode json = mapper.readTree(resp.body());
 
+        // Check for error first
         if (json.has("error")) {
-            return "AI Error: " + json.get("error").get("message").asText();
+            JsonNode err = json.get("error");
+            String msg = err.has("message") ? err.get("message").asText() : err.asText();
+            return "OpenAI Error: " + msg;
         }
-        JsonNode choices = json.get("choices");
-        if (choices == null || choices.isEmpty()) {
-            return "No response from AI. Check API key.";
-        }
-        return choices.get(0).get("message").get("content").asText();
-    }
 
+        // Safe null checks at every step
+        JsonNode choices = json.get("choices");
+        if (choices == null || !choices.isArray() || choices.isEmpty()) {
+            return "No response from AI. Check your OpenAI API key and quota.";
+        }
+
+        JsonNode choice = choices.get(0);
+        if (choice == null) return "Empty choice in AI response.";
+
+        JsonNode message = choice.get("message");
+        if (message == null) return "No message in AI response.";
+
+        JsonNode content = message.get("content");
+        if (content == null || content.isNull()) return "No content in AI response.";
+
+        return content.asText();
+    }
     // ─── INDEXING STATUS ─────────────────────────────────
     public Map<String, Object> getStatus(User user) {
         Long totalChunks = chunkRepo.countByUserId(user.getUserId());
