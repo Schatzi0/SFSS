@@ -27,8 +27,8 @@ import java.util.*;
 @Service
 public class RagService {
 
-    @Value("${openai.api.key:}")
-    private String openaiKey;
+    @Value("${groq.api.key:}")
+    private String groqKey;
 
     @Autowired private FileChunkRepository chunkRepo;
     @Autowired private FileRepository fileRepo;
@@ -96,51 +96,32 @@ public class RagService {
     }
 
     // ─── OPENAI EMBEDDING ─────────────────────────────────
-    public float[] generateEmbedding(String text) throws Exception {
-        if (openaiKey == null || openaiKey.isBlank())
-            throw new RuntimeException("OpenAI API key not set in environment");
-        if (text == null || text.isBlank())
-            throw new RuntimeException("Empty text");
-        if (text.length() > 30000) text = text.substring(0, 30000);
+    // Keyword-based chunk search — no embeddings needed
+    // Keyword-based chunk search — no embeddings needed
+    public List<Map<String, Object>> searchChunks(String query, User user, int topK)
+            throws Exception {
+        String q = query.toLowerCase().trim();
+        String[] words = q.split("\\s+");
+        if (words.length == 0) return java.util.Collections.emptyList();
 
-        String body = "{\"model\":\"text-embedding-3-small\",\"input\":"
-                + mapper.writeValueAsString(text) + "}";
+        StringBuilder sql = new StringBuilder(
+                "SELECT c.chunk_id, c.content, c.chunk_index, f.file_id, f.file_name " +
+                        "FROM file_chunks c JOIN files f ON c.file_id = f.file_id " +
+                        "WHERE c.user_id = ? AND (");
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.openai.com/v1/embeddings"))
-                .header("Authorization", "Bearer " + openaiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode json = mapper.readTree(resp.body());
-
-        if (json.has("error")) {
-            JsonNode err = json.get("error");
-            String msg = (err.has("message")) ? err.get("message").asText() : err.asText();
-            throw new RuntimeException("OpenAI embedding error: " + msg);
+        for (int i = 0; i < words.length; i++) {
+            if (i > 0) sql.append(" OR ");
+            sql.append("LOWER(c.content) LIKE ?");
         }
+        sql.append(") ORDER BY c.file_id, c.chunk_index LIMIT ?");
 
-        JsonNode dataNode = json.get("data");
-        if (dataNode == null || !dataNode.isArray() || dataNode.isEmpty()) {
-            throw new RuntimeException("Unexpected OpenAI response: " + resp.body().substring(0, Math.min(300, resp.body().length())));
-        }
+        Object[] params = new Object[words.length + 2];
+        params[0] = user.getUserId();
+        for (int i = 0; i < words.length; i++) params[i + 1] = "%" + words[i] + "%";
+        params[params.length - 1] = topK;
 
-        JsonNode embNode = dataNode.get(0);
-        if (embNode == null || !embNode.has("embedding")) {
-            throw new RuntimeException("No embedding in response");
-        }
-
-        JsonNode embArray = embNode.get("embedding");
-        float[] embedding = new float[embArray.size()];
-        for (int i = 0; i < embArray.size(); i++) {
-            embedding[i] = (float) embArray.get(i).asDouble();
-        }
-        return embedding;
+        return jdbc.queryForList(sql.toString(), params);
     }
-
-
     // Convert float[] to pgvector string "[0.1,0.2,...]"
     private String toVectorString(float[] embedding) {
         StringBuilder sb = new StringBuilder("[");
@@ -189,17 +170,23 @@ public class RagService {
             int stored = 0;
             for (int i = 0; i < chunks.size(); i++) {
                 try {
-                    float[] embedding = generateEmbedding(chunks.get(i));
-                    String vecStr = toVectorString(embedding);
+//                    float[] embedding = generateEmbedding(chunks.get(i));
+//                    String vecStr = toVectorString(embedding);
+//
+//                    jdbc.update(
+//                            "INSERT INTO file_chunks (file_id, user_id, chunk_index, content, embedding) " +
+//                                    "VALUES (?, ?, ?, ?, ?::vector)",
+//                            file.getFileId(), user.getUserId(), i,
+//                            chunks.get(i), vecStr
+//                    );
+//                    stored++;
 
                     jdbc.update(
-                            "INSERT INTO file_chunks (file_id, user_id, chunk_index, content, embedding) " +
-                                    "VALUES (?, ?, ?, ?, ?::vector)",
-                            file.getFileId(), user.getUserId(), i,
-                            chunks.get(i), vecStr
+                            "INSERT INTO file_chunks (file_id, user_id, chunk_index, content) " +
+                                    "VALUES (?, ?, ?, ?)",
+                            file.getFileId(), user.getUserId(), i, chunks.get(i)
                     );
                     stored++;
-
                     // Rate limit
                     if (i > 0 && i % 10 == 0) Thread.sleep(200);
                 } catch (Exception e) {
@@ -230,82 +217,177 @@ public class RagService {
         }
     }
 //Genre Classification
+//    public Map<String, String> classifyGenre(String text, String fileName,
+//                                             String fileType) throws Exception {
+//        // Images, Excel, etc. — heuristic-based
+//        String name = fileName != null ? fileName.toLowerCase() : "";
+//        String ct = fileType != null ? fileType.toLowerCase() : "";
+//
+//        if (ct.startsWith("image/")) return Map.of("genre","Personal","genreSub","Photo/Image");
+//        if (ct.contains("sheet")||name.endsWith(".xlsx")||name.endsWith(".csv"))
+//            return Map.of("genre","Professional","genreSub","Spreadsheet/Data");
+//        if (ct.contains("presentation")||name.endsWith(".pptx"))
+//            return Map.of("genre","Professional","genreSub","Presentation");
+//
+//        // For text content — use OpenAI
+//        if (openaiKey == null || openaiKey.isBlank())
+//            return Map.of("genre","Uncategorized","genreSub","");
+//
+//        String sample = text.length() > 2000 ? text.substring(0, 2000) : text;
+//        String prompt = "Classify this document into exactly one genre and sub-genre.\n\n" +
+//                "Available genres:\n" +
+//                "- Fiction (sub: Literary, SciFi, Fantasy, Mystery, Romance, Horror, Other)\n" +
+//                "- Academic (sub: ComputerScience, Mathematics, Physics, Chemistry, Biology, " +
+//                "History, Economics, Engineering, Medicine, Law, Other)\n" +
+//                "- Philosophy (sub: Ethics, Metaphysics, Political, Social, Other)\n" +
+//                "- Professional (sub: Report, Documentation, Contract, Technical, Finance, Marketing, Other)\n" +
+//                "- Personal (sub: Notes, Journal, Resume, Other)\n" +
+//                "- Reference (sub: Manual, Guide, Dictionary, Other)\n" +
+//                "- Code (sub: Java, Python, JavaScript, Web, Database, Config, Other)\n" +
+//                "- Other (sub: Unknown)\n\n" +
+//                "Respond with ONLY JSON: {\"genre\":\"...\",\"genreSub\":\"...\"}\n\n" +
+//                "Document (filename: " + fileName + "):\n" + sample;
+//
+//        String body = "{\"model\":\"gpt-3.5-turbo\",\"messages\":[" +
+//                "{\"role\":\"system\",\"content\":\"You are a document classifier. Respond only with JSON.\"}," +
+//                "{\"role\":\"user\",\"content\":" +
+//                mapper.writeValueAsString(prompt) + "}]," +
+//                "\"max_tokens\":50,\"temperature\":0}";
+//
+//        HttpRequest req = HttpRequest.newBuilder()
+//                .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+//                .header("Authorization", "Bearer " + openaiKey)
+//                .header("Content-Type", "application/json")
+//                .POST(HttpRequest.BodyPublishers.ofString(body))
+//                .build();
+//
+//        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+//        JsonNode json = mapper.readTree(resp.body());
+//        String content = json.get("choices").get(0).get("message").get("content").asText();
+//
+//        // Parse JSON response
+//        JsonNode result = mapper.readTree(content.trim());
+//        return Map.of(
+//                "genre", result.has("genre") ? result.get("genre").asText() : "Uncategorized",
+//                "genreSub", result.has("genreSub") ? result.get("genreSub").asText() : ""
+//        );
+//    }
+
+
     public Map<String, String> classifyGenre(String text, String fileName,
                                              String fileType) throws Exception {
-        // Images, Excel, etc. — heuristic-based
-        String name = fileName != null ? fileName.toLowerCase() : "";
-        String ct = fileType != null ? fileType.toLowerCase() : "";
+        if (groqKey == null || groqKey.isBlank())
+            return classifyGenreHeuristic(fileName, fileType);
 
-        if (ct.startsWith("image/")) return Map.of("genre","Personal","genreSub","Photo/Image");
-        if (ct.contains("sheet")||name.endsWith(".xlsx")||name.endsWith(".csv"))
-            return Map.of("genre","Professional","genreSub","Spreadsheet/Data");
-        if (ct.contains("presentation")||name.endsWith(".pptx"))
-            return Map.of("genre","Professional","genreSub","Presentation");
+        String sample = text.length() > 1500 ? text.substring(0, 1500) : text;
+        List<Map<String, String>> messages = new java.util.ArrayList<>();
+        messages.add(java.util.Map.of("role", "system",
+                "content", "You are a document classifier. Respond ONLY with valid JSON, no extra text."));
+        messages.add(java.util.Map.of("role", "user",
+                "content", "Classify this document. Choose genre from: Study, Work, Personal, Code, Fiction, Reference, Other. " +
+                        "Respond ONLY with JSON like: {\"genre\":\"Study\",\"genreSub\":\"Computer Science\"}\n\n" +
+                        "Filename: " + fileName + "\n\n" + sample));
 
-        // For text content — use OpenAI
-        if (openaiKey == null || openaiKey.isBlank())
-            return Map.of("genre","Uncategorized","genreSub","");
-
-        String sample = text.length() > 2000 ? text.substring(0, 2000) : text;
-        String prompt = "Classify this document into exactly one genre and sub-genre.\n\n" +
-                "Available genres:\n" +
-                "- Fiction (sub: Literary, SciFi, Fantasy, Mystery, Romance, Horror, Other)\n" +
-                "- Academic (sub: ComputerScience, Mathematics, Physics, Chemistry, Biology, " +
-                "History, Economics, Engineering, Medicine, Law, Other)\n" +
-                "- Philosophy (sub: Ethics, Metaphysics, Political, Social, Other)\n" +
-                "- Professional (sub: Report, Documentation, Contract, Technical, Finance, Marketing, Other)\n" +
-                "- Personal (sub: Notes, Journal, Resume, Other)\n" +
-                "- Reference (sub: Manual, Guide, Dictionary, Other)\n" +
-                "- Code (sub: Java, Python, JavaScript, Web, Database, Config, Other)\n" +
-                "- Other (sub: Unknown)\n\n" +
-                "Respond with ONLY JSON: {\"genre\":\"...\",\"genreSub\":\"...\"}\n\n" +
-                "Document (filename: " + fileName + "):\n" + sample;
-
-        String body = "{\"model\":\"gpt-3.5-turbo\",\"messages\":[" +
-                "{\"role\":\"system\",\"content\":\"You are a document classifier. Respond only with JSON.\"}," +
-                "{\"role\":\"user\",\"content\":" +
-                mapper.writeValueAsString(prompt) + "}]," +
-                "\"max_tokens\":50,\"temperature\":0}";
-
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.openai.com/v1/chat/completions"))
-                .header("Authorization", "Bearer " + openaiKey)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode json = mapper.readTree(resp.body());
-        String content = json.get("choices").get(0).get("message").get("content").asText();
-
-        // Parse JSON response
-        JsonNode result = mapper.readTree(content.trim());
-        return Map.of(
-                "genre", result.has("genre") ? result.get("genre").asText() : "Uncategorized",
-                "genreSub", result.has("genreSub") ? result.get("genreSub").asText() : ""
-        );
+        String answer = callChatCompletion(messages);
+        try {
+            answer = answer.replaceAll("```json","").replaceAll("```","").trim();
+            JsonNode result = mapper.readTree(answer);
+            return java.util.Map.of(
+                    "genre",    result.has("genre")    ? result.get("genre").asText()    : "Other",
+                    "genreSub", result.has("genreSub") ? result.get("genreSub").asText() : ""
+            );
+        } catch (Exception e) {
+            return classifyGenreHeuristic(fileName, fileType);
+        }
     }
+
+    // Heuristic Method
+    public Map<String, String> classifyGenreHeuristic(String fileName, String fileType) {
+        String n   = (fileName  != null ? fileName  : "").toLowerCase().replaceAll("[_\\-]", " ");
+        String ct  = (fileType  != null ? fileType  : "").toLowerCase();
+        String base= n.contains(".") ? n.substring(0, n.lastIndexOf('.')) : n;
+
+        if (n.endsWith(".java")||n.endsWith(".kt"))           return g("Code","Java");
+        if (n.endsWith(".py")||n.endsWith(".ipynb"))          return g("Code","Python");
+        if (n.endsWith(".js")||n.endsWith(".ts")||n.endsWith(".jsx")||n.endsWith(".tsx")) return g("Code","JavaScript");
+        if (n.endsWith(".html")||n.endsWith(".css")||n.endsWith(".scss")) return g("Code","Web");
+        if (n.endsWith(".sql"))                               return g("Code","Database");
+        if (n.endsWith(".sh")||n.endsWith(".bash")||n.endsWith(".bat")) return g("Code","Scripts");
+        if (n.endsWith(".json")||n.endsWith(".yaml")||n.endsWith(".yml")||
+                n.endsWith(".xml")||n.endsWith(".toml")||n.endsWith(".properties")||
+                n.endsWith(".env")||n.endsWith(".ini"))           return g("Code","Config");
+        if (n.endsWith(".c")||n.endsWith(".cpp")||n.endsWith(".h")||
+                n.endsWith(".cs")||n.endsWith(".go")||n.endsWith(".rs")) return g("Code","Systems");
+
+        if (ct.startsWith("image/"))                          return g("Personal","Photos & Images");
+
+        boolean isExam  = kw(base,"exam","test","quiz","pyq","previous year","question paper","assignment","homework");
+        boolean isCS    = kw(base,"linux","unix","algorithm","data structure","programming","software","computer","machine learning","neural","deep learning");
+        boolean isMath  = kw(base,"math","calculus","algebra","geometry","statistics","probability");
+        boolean isPhys  = kw(base,"physics","mechanics","thermodynamics","quantum","optics");
+        boolean isChem  = kw(base,"chemistry","organic","inorganic","chemical");
+        boolean isBio   = kw(base,"biology","anatomy","genetics","ecology","microb");
+        boolean isStudy = kw(base,"lecture","notes","textbook","book","chapter","study","course","university","college","school");
+        boolean isFict  = kw(base,"novel","fiction","story","tale","fantasy","romance","thriller","mystery","horror");
+        boolean isWork  = kw(base,"report","proposal","invoice","contract","budget","project","analysis","presentation","plan","memo");
+
+        if (isExam) {
+            if (isCS)   return g("Study","CS Exam / Assignment");
+            if (isMath) return g("Study","Math Exam / Assignment");
+            if (isPhys) return g("Study","Physics Exam / Assignment");
+            return      g("Study","Exam Material");
+        }
+        if (isCS)    return g("Study","Computer Science");
+        if (isMath)  return g("Study","Mathematics");
+        if (isPhys)  return g("Study","Physics");
+        if (isChem)  return g("Study","Chemistry");
+        if (isBio)   return g("Study","Biology");
+        if (isStudy) return g("Study","Study Material");
+        if (isFict)  return g("Fiction","General Fiction");
+        if (isWork)  return g("Work","Reports & Documents");
+
+        if (ct.contains("sheet")||ct.contains("excel")||n.endsWith(".xlsx")||n.endsWith(".csv"))
+            return g("Work","Data & Spreadsheets");
+        if (ct.contains("presentation")||n.endsWith(".pptx")) return g("Work","Presentation");
+        if (kw(base,"manual","guide","handbook","reference","readme","howto","documentation"))
+            return g("Reference","Manual & Guide");
+        if (kw(base,"diary","journal","personal","note"))      return g("Personal","Notes & Journal");
+        if (ct.contains("pdf"))                                return g("Study","Document");
+        if (ct.contains("word")||ct.contains("document"))      return g("Work","Document");
+
+        return g("Other","Uncategorized");
+    }
+
+    private Map<String, String> g(String genre, String sub) {
+        return java.util.Map.of("genre", genre, "genreSub", sub);
+    }
+
+    private boolean kw(String text, String... keywords) {
+        for (String k : keywords) { if (text.contains(k)) return true; }
+        return false;
+    }
+
 
     // ─── SEMANTIC SEARCH ─────────────────────────────────
-    public List<Map<String, Object>> searchChunks(String query, User user, int topK)
-            throws Exception {
-        float[] queryEmbedding = generateEmbedding(query);
-        String vecStr = toVectorString(queryEmbedding);
-
-        List<Map<String, Object>> results = jdbc.queryForList(
-                "SELECT c.chunk_id, c.content, c.chunk_index, " +
-                        "       f.file_id, f.file_name, " +
-                        "       1 - (c.embedding <=> ?::vector) AS similarity " +
-                        "FROM file_chunks c " +
-                        "JOIN files f ON c.file_id = f.file_id " +
-                        "WHERE c.user_id = ? " +
-                        "  AND 1 - (c.embedding <=> ?::vector) > 0.3 " +
-                        "ORDER BY c.embedding <=> ?::vector " +
-                        "LIMIT ?",
-                vecStr, user.getUserId(), vecStr, vecStr, topK
-        );
-        return results;
-    }
+//    public List<Map<String, Object>> searchChunks(String query, User user, int topK)
+//            throws Exception {
+//        float[] queryEmbedding = generateEmbedding(query);
+//        String vecStr = toVectorString(queryEmbedding);
+//
+//        List<Map<String, Object>> results = jdbc.queryForList(
+//                "SELECT c.chunk_id, c.content, c.chunk_index, " +
+//                        "       f.file_id, f.file_name, " +
+//                        "       1 - (c.embedding <=> ?::vector) AS similarity " +
+//                        "FROM file_chunks c " +
+//                        "JOIN files f ON c.file_id = f.file_id " +
+//                        "WHERE c.user_id = ? " +
+//                        "  AND 1 - (c.embedding <=> ?::vector) > 0.3 " +
+//                        "ORDER BY c.embedding <=> ?::vector " +
+//                        "LIMIT ?",
+//                vecStr, user.getUserId(), vecStr, vecStr, topK
+//        );
+//        return results;
+//    }
 
     // ─── RAG CHAT ────────────────────────────────────────
     public Map<String, Object> chat(String question, User user,
@@ -362,16 +444,61 @@ public class RagService {
 
 
     // callChatCompletion — null check + proper JSON serialization
+//    private String callChatCompletion(List<Map<String, String>> messages) throws Exception {
+//        Map<String, Object> bodyMap = new java.util.LinkedHashMap<>();
+//        bodyMap.put("model", "gpt-3.5-turbo");
+//        bodyMap.put("messages", messages);
+//        bodyMap.put("max_tokens", 800);
+//        bodyMap.put("temperature", 0.3);
+//
+//        HttpRequest req = HttpRequest.newBuilder()
+//                .uri(URI.create("https://api.openai.com/v1/chat/completions"))
+//                .header("Authorization", "Bearer " + openaiKey)
+//                .header("Content-Type", "application/json")
+//                .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(bodyMap)))
+//                .build();
+//
+//        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+//        JsonNode json = mapper.readTree(resp.body());
+//
+//        // Check for error first
+//        if (json.has("error")) {
+//            JsonNode err = json.get("error");
+//            String msg = err.has("message") ? err.get("message").asText() : err.asText();
+//            return "OpenAI Error: " + msg;
+//        }
+//
+//        // Safe null checks at every step
+//        JsonNode choices = json.get("choices");
+//        if (choices == null || !choices.isArray() || choices.isEmpty()) {
+//            return "No response from AI. Check your OpenAI API key and quota.";
+//        }
+//
+//        JsonNode choice = choices.get(0);
+//        if (choice == null) return "Empty choice in AI response.";
+//
+//        JsonNode message = choice.get("message");
+//        if (message == null) return "No message in AI response.";
+//
+//        JsonNode content = message.get("content");
+//        if (content == null || content.isNull()) return "No content in AI response.";
+//
+//        return content.asText();
+//    }
+
     private String callChatCompletion(List<Map<String, String>> messages) throws Exception {
+        if (groqKey == null || groqKey.isBlank())
+            return "AI key not configured. Add GROQ_API_KEY in Render environment.";
+
         Map<String, Object> bodyMap = new java.util.LinkedHashMap<>();
-        bodyMap.put("model", "gpt-3.5-turbo");
+        bodyMap.put("model", "llama-3.1-8b-instant");
         bodyMap.put("messages", messages);
         bodyMap.put("max_tokens", 800);
-        bodyMap.put("temperature", 0.3);
+        bodyMap.put("temperature", 0.4);
 
         HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create("https://api.openai.com/v1/chat/completions"))
-                .header("Authorization", "Bearer " + openaiKey)
+                .uri(URI.create("https://api.groq.com/openai/v1/chat/completions"))
+                .header("Authorization", "Bearer " + groqKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(bodyMap)))
                 .build();
@@ -379,30 +506,16 @@ public class RagService {
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
         JsonNode json = mapper.readTree(resp.body());
 
-        // Check for error first
         if (json.has("error")) {
             JsonNode err = json.get("error");
-            String msg = err.has("message") ? err.get("message").asText() : err.asText();
-            return "OpenAI Error: " + msg;
+            return "Groq Error: " + (err.has("message") ? err.get("message").asText() : err.asText());
         }
-
-        // Safe null checks at every step
         JsonNode choices = json.get("choices");
-        if (choices == null || !choices.isArray() || choices.isEmpty()) {
-            return "No response from AI. Check your OpenAI API key and quota.";
-        }
-
-        JsonNode choice = choices.get(0);
-        if (choice == null) return "Empty choice in AI response.";
-
-        JsonNode message = choice.get("message");
-        if (message == null) return "No message in AI response.";
-
-        JsonNode content = message.get("content");
-        if (content == null || content.isNull()) return "No content in AI response.";
-
-        return content.asText();
+        if (choices == null || choices.isEmpty()) return "No response from AI.";
+        JsonNode content = choices.get(0).get("message").get("content");
+        return content != null ? content.asText() : "Empty response.";
     }
+
     // ─── INDEXING STATUS ─────────────────────────────────
     public Map<String, Object> getStatus(User user) {
         Long totalChunks = chunkRepo.countByUserId(user.getUserId());
@@ -418,7 +531,8 @@ public class RagService {
         return Map.of(
                 "totalChunks", totalChunks,
                 "indexedFiles", indexedFiles,
-                "hasApiKey", openaiKey != null && !openaiKey.isBlank()
+                "hasApiKey", groqKey != null && !groqKey.isBlank()
+
         );
     }
 }
