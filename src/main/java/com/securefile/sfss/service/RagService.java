@@ -98,26 +98,40 @@ public class RagService {
     // ─── OPENAI EMBEDDING ─────────────────────────────────
     // Keyword-based chunk search — no embeddings needed
     // Keyword-based chunk search — no embeddings needed
-    public List<Map<String, Object>> searchChunks(String query, User user, int topK)
-            throws Exception {
+    public List<Map<String, Object>> searchChunks(String query, User user, int topK) {
         String q = query.toLowerCase().trim();
-        String[] words = q.split("\\s+");
-        if (words.length == 0) return java.util.Collections.emptyList();
+
+        // Common stopwords + greetings — skip retrieval for these
+        Set<String> stopwords = Set.of("hi","hello","hey","the","is","are","a","an",
+                "of","to","in","on","for","and","or","what","how","why","can","you",
+                "please","ok","okay","thanks","thank");
+
+        String[] rawWords = q.split("\\s+");
+        List<String> words = new ArrayList<>();
+        for (String w : rawWords) {
+            // Only use words with length >= 4 and not common stopwords
+            if (w.length() >= 4 && !stopwords.contains(w)) {
+                words.add(w);
+            }
+        }
+
+        // If nothing meaningful to search (e.g. just "hi"), return empty — no context
+        if (words.isEmpty()) return java.util.Collections.emptyList();
 
         StringBuilder sql = new StringBuilder(
                 "SELECT c.chunk_id, c.content, c.chunk_index, f.file_id, f.file_name " +
                         "FROM file_chunks c JOIN files f ON c.file_id = f.file_id " +
                         "WHERE c.user_id = ? AND (");
 
-        for (int i = 0; i < words.length; i++) {
+        for (int i = 0; i < words.size(); i++) {
             if (i > 0) sql.append(" OR ");
             sql.append("LOWER(c.content) LIKE ?");
         }
         sql.append(") ORDER BY c.file_id, c.chunk_index LIMIT ?");
 
-        Object[] params = new Object[words.length + 2];
+        Object[] params = new Object[words.size() + 2];
         params[0] = user.getUserId();
-        for (int i = 0; i < words.length; i++) params[i + 1] = "%" + words[i] + "%";
+        for (int i = 0; i < words.size(); i++) params[i + 1] = "%" + words.get(i) + "%";
         params[params.length - 1] = topK;
 
         return jdbc.queryForList(sql.toString(), params);
@@ -392,54 +406,35 @@ public class RagService {
     // ─── RAG CHAT ────────────────────────────────────────
     public Map<String, Object> chat(String question, User user,
                                     List<Map<String, String>> history) throws Exception {
-        // Search relevant chunks
-        List<Map<String, Object>> chunks = searchChunks(question, user, 5);
+        List<Map<String, Object>> chunks = searchChunks(question, user, 6);
 
-        if (chunks.isEmpty()) {
-            return Map.of(
-                    "answer", "I couldn't find relevant information in your files. " +
-                            "Make sure your files are indexed (click the ⚡ index button on a file).",
-                    "sources", List.of()
-            );
-        }
-
-        // Build context
         StringBuilder context = new StringBuilder();
-        List<String> sourceFiles = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-
-        for (Map<String, Object> chunk : chunks) {
-            String fname = (String) chunk.get("file_name");
-            if (seen.add(fname)) sourceFiles.add(fname);
-            context.append("--- From: ").append(fname).append(" ---\n");
-            context.append(chunk.get("content")).append("\n\n");
+        Set<String> sources = new LinkedHashSet<>();
+        for (Map<String, Object> c : chunks) {
+            context.append("From '").append(c.get("file_name")).append("': ")
+                    .append(c.get("content")).append("\n\n");
+            sources.add((String) c.get("file_name"));
         }
 
-        // Build messages
+        String systemPrompt;
+        if (context.length() == 0) {
+            systemPrompt = "You are a helpful assistant for a file storage app. " +
+                    "No relevant document context was found for this query. " +
+                    "If the user is just greeting (hi/hello) or asking something general, " +
+                    "respond normally and briefly mention you can answer questions about their indexed files.";
+        } else {
+            systemPrompt = "You are a helpful assistant answering questions about the user's documents. " +
+                    "Use the provided context to answer. If the context doesn't actually help " +
+                    "answer the question, say so honestly instead of guessing.\n\nContext:\n" + context;
+        }
+
         List<Map<String, String>> messages = new ArrayList<>();
-        messages.add(Map.of("role", "system",
-                "content", "You are a helpful assistant that answers questions based on the user's uploaded files. " +
-                        "Always base your answers on the provided context. " +
-                        "If the context doesn't contain enough information, say so clearly. " +
-                        "Be concise and accurate."));
+        messages.add(Map.of("role", "system", "content", systemPrompt));
+        if (history != null) messages.addAll(history);
+        messages.add(Map.of("role", "user", "content", question));
 
-        // Add conversation history (last 4 messages)
-        if (history != null) {
-            int start = Math.max(0, history.size() - 4);
-            messages.addAll(history.subList(start, history.size()));
-        }
-
-        messages.add(Map.of("role", "user",
-                "content", "Context from files:\n" + context + "\n\nQuestion: " + question));
-
-        // Call OpenAI chat
         String answer = callChatCompletion(messages);
-
-        return Map.of(
-                "answer", answer,
-                "sources", sourceFiles,
-                "chunks", chunks.size()
-        );
+        return Map.of("answer", answer, "sources", new ArrayList<>(sources));
     }
 
 
