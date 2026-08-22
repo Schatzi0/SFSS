@@ -486,7 +486,8 @@ public class RagService {
             return "AI key not configured. Add GROQ_API_KEY in Render environment.";
 
         Map<String, Object> bodyMap = new java.util.LinkedHashMap<>();
-        bodyMap.put("model", "llama-3.1-8b-instant");
+        // bodyMap.put("model", "llama-3.1-8b-instant");
+bodyMap.put("model", "llama3-8b-8192");
         bodyMap.put("messages", messages);
         bodyMap.put("max_tokens", 800);
         bodyMap.put("temperature", 0.4);
